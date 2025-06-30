@@ -2,43 +2,18 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>勤怠管理</title>
+  
+  <!-- PWA対応 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="勤怠管理">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
   <style>
-    :root {
-      /* ライトモード用の色変数 */
-      --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      --bg-container: rgba(255, 255, 255, 0.95);
-      --bg-card: rgba(255, 255, 255, 0.8);
-      --bg-result: rgba(249, 250, 251, 0.7);
-      --bg-dropdown: rgba(255, 255, 255, 0.98);
-      --text-primary: #1e293b;
-      --text-secondary: #475569;
-      --text-tertiary: #64748b;
-      --text-muted: #8e8e93;
-      --border-primary: rgba(226, 232, 240, 0.8);
-      --border-secondary: rgba(255, 255, 255, 0.5);
-      --shadow-primary: 0 25px 50px rgba(0, 0, 0, 0.05), 0 10px 25px rgba(0, 0, 0, 0.03);
-      --shadow-secondary: 0 8px 25px rgba(0, 0, 0, 0.03), 0 3px 10px rgba(0, 0, 0, 0.02);
-    }
-
-    [data-theme="dark"] {
-      /* ダークモード用の色変数 */
-      --bg-primary: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
-      --bg-container: #2d2d30;
-      --bg-card: #373738;
-      --bg-result: #232326;
-      --bg-dropdown: #2d2d30;
-      --text-primary: #ffffff;
-      --text-secondary: #cccccc;
-      --text-tertiary: #999999;
-      --text-muted: #666666;
-      --border-primary: #46464b;
-      --border-secondary: #3c3c41;
-      --shadow-primary: 0 25px 50px rgba(0, 0, 0, 0.5), 0 10px 25px rgba(0, 0, 0, 0.3);
-      --shadow-secondary: 0 8px 25px rgba(0, 0, 0, 0.3), 0 3px 10px rgba(0, 0, 0, 0.2);
-    }
-
     * {
       margin: 0;
       padding: 0;
@@ -47,20 +22,91 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg-primary);
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       min-height: 100vh;
       padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      color: var(--text-primary);
-      line-height: 1.6;
-      transition: background 0.3s ease, color 0.3s ease;
+      color: #1e293b;
+      /* iPad ズーム機能を無効化 */
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* オフライン状態の表示 */
+    .offline-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 152, 0, 0.95);
+      color: white;
+      text-align: center;
+      padding: 8px;
+      font-size: 0.9em;
+      font-weight: 500;
+      z-index: 10000;
+      display: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .offline-indicator.show {
+      display: block;
+      animation: slideInAlertTop 0.3s ease-out;
+    }
+
+    /* PWAインストールボタン */
+    .install-prompt {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+      display: none;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .install-prompt:hover {
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+    }
+
+    .install-prompt.show {
+      display: block;
+      animation: slideInAlertBottom 0.3s ease-out;
+    }
+
+    @keyframes slideInAlertBottom {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
     .logo {
-      margin-bottom: 30px;
+      margin-bottom: 40px;
       opacity: 0;
       animation: fadeInDown 0.6s ease-out 0.1s forwards;
     }
@@ -82,29 +128,56 @@
       transform: scale(1.02) translateY(-2px);
       box-shadow: 
         0 25px 50px rgba(0,0,0,0.15),
-        0 12px 20px rgba(0,0,0,0.08);
+        0 12px 20px rgba(0,0,0,0.08),
+        0 0 0 1px rgba(255,255,255,0.9);
+    }
+
+    /* ロゴ画像が読み込めない場合のフォールバック */
+    .logo-fallback {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      color: white;
+      font-weight: bold;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.1),
+        0 8px 16px rgba(0,0,0,0.06),
+        0 0 0 1px rgba(255,255,255,0.9);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      transition: all 0.4s ease;
+    }
+
+    .logo-fallback:hover {
+      transform: scale(1.02) translateY(-2px);
+      box-shadow: 
+        0 25px 50px rgba(0,0,0,0.15),
+        0 12px 20px rgba(0,0,0,0.08),
+        0 0 0 1px rgba(255,255,255,0.9);
     }
 
     .container {
-      background: var(--bg-container);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-secondary);
-      border-radius: 20px;
-      padding: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      padding: 48px;
       width: 100%;
-      max-width: 800px;
-      box-shadow: var(--shadow-primary);
+      max-width: 420px;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.05),
+        0 10px 25px rgba(0, 0, 0, 0.03),
+        0 0 0 1px rgba(255, 255, 255, 0.3);
       opacity: 0;
       animation: fadeInUp 0.8s ease-out 0.2s forwards;
       position: relative;
-      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    /* ダークモード時のコンテナ強制適用 */
-    [data-theme="dark"] .container {
-      background: #2d2d30 !important;
-      border: 1px solid #3c3c41 !important;
+      /* ズーム防止設定 */
+      touch-action: manipulation;
     }
 
     .container::before {
@@ -120,62 +193,62 @@
 
     h1 {
       text-align: center;
-      font-size: 1.75em;
+      font-size: 1.875em;
       font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 32px;
+      color: #1e293b;
+      margin-bottom: 48px;
       letter-spacing: -0.025em;
-      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      transition: color 0.3s ease;
     }
 
-    /* ダークモードトグルボタン */
-    .theme-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--bg-container);
-      border: 1px solid var(--border-primary);
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1.2em;
-      transition: all 0.3s ease;
+    .clock {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.3);
       backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--shadow-secondary);
-      z-index: 1000;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.03),
+        0 3px 10px rgba(0, 0, 0, 0.02),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    /* ダークモード時のテーマトグル強制適用 */
-    [data-theme="dark"] .theme-toggle {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
+    .clock-date {
+      font-size: 1.1em;
+      font-weight: 500;
+      color: #64748b;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
     }
 
-    .theme-toggle:hover {
-      transform: scale(1.1);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    .clock-time {
+      font-size: 2.2em;
+      font-weight: 300;
+      color: #1e293b;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .form-group {
-      margin-bottom: 18px;
+      margin-bottom: 24px;
       position: relative;
     }
 
     label {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-weight: 500;
       color: #424245;
-      font-size: 0.85em;
+      font-size: 0.9em;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -184,31 +257,32 @@
       position: relative;
     }
 
-    input[type="text"],
-    input[type="time"],
-    input[type="number"],
-    input[type="date"] {
+    input[type="text"] {
       width: 100%;
-      padding: 12px 16px;
-      font-size: 0.9em;
+      padding: 18px 24px;
+      font-size: 1em;
       border: 1px solid rgba(226, 232, 240, 0.8);
-      border-radius: 12px;
+      border-radius: 16px;
       background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(10px);
       transition: all 0.3s ease;
       outline: none;
       color: #1e293b;
-      min-height: 42px;
+      min-height: 44px;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
       box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.02),
+        0 4px 12px rgba(0, 0, 0, 0.02),
         inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      font-family: inherit;
+      /* 入力フィールドではテキスト選択を有効にする */
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      touch-action: manipulation;
     }
 
-    input[type="text"]:focus,
-    input[type="time"]:focus,
-    input[type="number"]:focus,
-    input[type="date"]:focus {
+    input[type="text"]:focus {
       border-color: #3b82f6;
       box-shadow: 
         0 0 0 3px rgba(59, 130, 246, 0.1),
@@ -219,69 +293,57 @@
     }
 
     input[type="text"]::placeholder {
-      color: var(--text-muted);
-      transition: color 0.3s ease;
+      color: #8e8e93;
     }
 
-    /* ダークモード時のプレースホルダー改善 */
-    [data-theme="dark"] input[type="text"]::placeholder {
-      color: #888888;
+    /* 名前フィールドの右パディングを調整（クリアボタン用のスペース確保） */
+    #empName {
+      padding-right: 48px;
     }
 
-    /* number inputのスピナーを表示 */
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: auto;
-      margin: 0;
-    }
-
-    /* 名前と検索フィールドの右パディングを調整（クリアボタン用） */
-    #name, #searchName {
-      padding-right: 40px;
+    /* 検索フィールドの右パディングを調整（クリアボタン用のスペース確保） */
+    #searchEmpName {
+      padding-right: 48px;
     }
 
     /* クリアボタンのスタイル */
     .clear-btn {
       position: absolute;
-      right: 10px;
+      right: 12px;
       top: 50%;
       transform: translateY(-50%);
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       border: none;
-      background: var(--border-primary);
-      color: var(--text-muted);
+      background: rgba(142, 142, 147, 0.15);
+      color: #8e8e93;
       border-radius: 50%;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      display: none;
+      display: none; /* 初期状態は非表示 */
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
       z-index: 10;
+      /* ズーム防止設定 */
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
       line-height: 1;
     }
 
-    /* ダークモード時のクリアボタン強制適用 */
-    [data-theme="dark"] .clear-btn {
-      background: #46464b !important;
-      color: #cccccc !important;
-    }
-
     .clear-btn:hover {
-      background: var(--border-primary);
-      color: var(--text-secondary);
+      background: rgba(142, 142, 147, 0.25);
+      color: #666;
       transform: translateY(-50%) scale(1.05);
     }
 
-    [data-theme="dark"] .clear-btn:hover {
-      background: #505055 !important;
-      color: #ffffff !important;
-    }
-
     .clear-btn:active {
-      background: var(--border-primary);
+      background: rgba(142, 142, 147, 0.35);
       transform: translateY(-50%) scale(0.95);
     }
 
@@ -307,32 +369,31 @@
       top: 100%;
       left: 0;
       right: 0;
-      background: var(--bg-dropdown);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.6);
       border-radius: 16px;
-      box-shadow: var(--shadow-primary);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 20px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(255, 255, 255, 0.4);
       z-index: 1000;
       max-height: 280px;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow-x: hidden; /* 横スクロール無効 */
+      overflow-y: auto; /* 縦スクロールのみ有効 */
       display: none;
       margin-top: 4px;
       animation: slideDown 0.3s ease-out;
-      scrollbar-width: thin;
-      scrollbar-color: var(--text-muted) transparent;
-      transition: background 0.3s ease, border-color 0.3s ease;
+      /* 縦スクロールバーのみ薄く表示 */
+      scrollbar-width: thin; /* Firefox */
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* Firefox */
     }
 
-    /* ダークモード時のドロップダウン強制適用 */
-    [data-theme="dark"] .dropdown-menu {
-      background: #2d2d30 !important;
-      border: 1px solid #3c3c41 !important;
-    }
-
+    /* WebKit系ブラウザの縦スクロールバーのみ */
     .dropdown-menu::-webkit-scrollbar {
-      width: 6px;
+      width: 6px; /* 縦スクロールバーの幅 */
+      height: 0; /* 横スクロールバーを完全に無効 */
     }
 
     .dropdown-menu::-webkit-scrollbar-track {
@@ -346,6 +407,11 @@
 
     .dropdown-menu::-webkit-scrollbar-thumb:hover {
       background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* 横スクロールバーを完全に無効化 */
+    .dropdown-menu::-webkit-scrollbar:horizontal {
+      display: none;
     }
 
     .dropdown-menu.show {
@@ -362,7 +428,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 56px;
+      min-height: 56px; /* タッチフレンドリーな高さ */
     }
 
     .dropdown-item:last-child {
@@ -401,217 +467,212 @@
       font-size: 0.95em;
     }
 
-    /* チェックボックスのスタイル */
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      margin-right: 8px;
-      accent-color: #3b82f6;
-      cursor: pointer;
-    }
-
-    /* ダークモード時のチェックボックス改善 */
-    [data-theme="dark"] input[type="checkbox"] {
-      background: rgba(60, 60, 65, 0.8);
-      border: 1px solid rgba(80, 80, 85, 0.6);
-      accent-color: #3b82f6;
-    }
-
-    .checkbox-label {
+    .button-group {
       display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
       align-items: center;
-      font-size: 0.95em;
-      color: var(--text-secondary);
-      cursor: pointer;
-      text-transform: none;
-      letter-spacing: normal;
-      margin-bottom: 0;
-      transition: color 0.3s ease;
     }
 
-    /* ダークモード時のラベル色改善 */
-    [data-theme="dark"] .checkbox-label {
-      color: #cccccc;
+    .primary-buttons {
+      display: flex;
+      gap: 12px;
+      flex: 1;
     }
 
-    /* ボタンスタイル */
+    /* Touch-friendly improvements */
     button {
       font-family: inherit;
-      font-size: 0.85em;
+      font-size: 1em;
       font-weight: 500;
       border: none;
-      border-radius: 10px;
+      border-radius: 16px;
       cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
       outline: none;
-      min-height: 38px;
+      min-height: 48px;
+      -webkit-tap-highlight-color: transparent;
       backdrop-filter: blur(10px);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      margin: 0; /* デフォルトマージンをリセット */
+      /* ズーム防止設定 */
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    /* プライマリボタン */
     .btn-primary {
-      padding: 10px 18px;
+      padding: 18px 28px;
+      flex: 1;
       color: #ffffff;
       background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
       box-shadow: 
-        0 4px 12px rgba(59, 130, 246, 0.25),
-        0 2px 6px rgba(59, 130, 246, 0.15);
+        0 6px 20px rgba(59, 130, 246, 0.3),
+        0 2px 8px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.6s ease;
     }
 
     .btn-primary:hover:not(:disabled) {
       background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
       box-shadow: 
-        0 6px 16px rgba(59, 130, 246, 0.3),
-        0 3px 8px rgba(59, 130, 246, 0.2);
+        0 12px 30px rgba(59, 130, 246, 0.4),
+        0 6px 16px rgba(59, 130, 246, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
 
-    /* セカンダリボタン */
+    .btn-primary:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 
+        0 8px 20px rgba(59, 130, 246, 0.35),
+        0 3px 10px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
     .btn-secondary {
-      padding: 10px 18px;
-      color: #3b82f6;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #3b82f6;
+      padding: 16px 24px;
+      flex: 1;
+      color: #007aff;
+      background: #ffffff;
+      border: 1px solid #007aff;
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: rgba(59, 130, 246, 0.05);
+      background: #f0f8ff;
       transform: translateY(-1px);
     }
 
-    /* 成功ボタン */
-    .btn-success {
-      padding: 10px 18px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 4px 12px rgba(16, 185, 129, 0.25),
-        0 2px 6px rgba(16, 185, 129, 0.15);
+    .btn-secondary:active:not(:disabled) {
+      transform: translateY(0);
+      background: #e6f3ff;
     }
 
-    .btn-success:hover:not(:disabled) {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      transform: translateY(-1px);
+    button:disabled {
+      background: #f2f2f7 !important;
+      color: #8e8e93 !important;
+      border-color: #f2f2f7 !important;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
     }
 
-    /* 危険ボタン */
-    .btn-danger {
-      padding: 10px 18px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      box-shadow: 
-        0 4px 12px rgba(239, 68, 68, 0.25),
-        0 2px 6px rgba(239, 68, 68, 0.15);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      transform: translateY(-1px);
-    }
-
-    /* 警告ボタン */
-    .btn-warning {
-      padding: 10px 18px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      box-shadow: 
-        0 4px 12px rgba(245, 158, 11, 0.25),
-        0 2px 6px rgba(245, 158, 11, 0.15);
-    }
-
-    .btn-warning:hover:not(:disabled) {
-      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-      transform: translateY(-1px);
-    }
-
-    /* 深緑ボタン（Excelエクスポート用） */
-    .btn-dark-success {
-      padding: 10px 18px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-      box-shadow: 
-        0 4px 12px rgba(4, 120, 87, 0.3),
-        0 2px 6px rgba(4, 120, 87, 0.2);
-    }
-
-    .btn-dark-success:hover:not(:disabled) {
-      background: linear-gradient(135deg, #065f46 0%, #064e3b 100%);
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 16px rgba(4, 120, 87, 0.4),
-        0 3px 8px rgba(4, 120, 87, 0.25);
-    }
-    .btn-info {
-      padding: 10px 18px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-      box-shadow: 
-        0 4px 12px rgba(6, 182, 212, 0.25),
-        0 2px 6px rgba(6, 182, 212, 0.15);
-    }
-
-    .btn-info:hover:not(:disabled) {
-      background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-      transform: translateY(-1px);
-    }
-
-    /* 小さなボタン */
-    .btn-sm {
-      padding: 6px 12px;
-      font-size: 0.75em;
-      border-radius: 8px;
-      min-height: 30px;
-    }
-
-    /* 極小ボタン */
-    .btn-xs {
-      padding: 6px 12px;
-      font-size: 0.75em;
-      border-radius: 8px;
-      min-height: 32px;
-    }
-
-    /* ボタングループ */
-    .btn-group {
+    .menu-toggle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(248, 250, 252, 0.9);
+      backdrop-filter: blur(10px);
+      color: #64748b;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
       align-items: center;
-      margin: 12px 0;
+      justify-content: center;
+      font-size: 1.2em;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.03),
+        0 1px 4px rgba(0, 0, 0, 0.02),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    .btn-group.main-buttons {
-      margin: 16px 0;
+    .menu-toggle:hover {
+      background: rgba(241, 245, 249, 0.95);
+      color: #475569;
+      transform: translateY(-1px);
+      box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.05),
+        0 3px 8px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
-    /* バックアップ・リストアボタンエリア */
-    .backup-restore-buttons {
+    .menu-toggle.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: #ffffff;
+      transform: rotate(180deg);
+      box-shadow: 
+        0 8px 20px rgba(59, 130, 246, 0.3),
+        0 3px 8px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    #adminMenu {
+      margin-top: 16px;
+      display: none;
+      gap: 8px;
+      opacity: 0;
+      animation: slideDown 0.3s ease-out forwards;
+    }
+
+    #adminMenu.show {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin: 12px 0;
+      flex-direction: column;
     }
 
-    /* 結果表示エリア */
-    #result {
-      margin-top: 32px;
+    .admin-btn {
+      padding: 12px 16px;
+      font-size: 0.9em;
+      background: #f2f2f7;
+      color: #424245;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .admin-btn:hover {
+      background: #e5e5ea;
+    }
+
+    .admin-btn.success {
+      background: rgba(52, 199, 89, 0.95);
+      color: #ffffff;
+    }
+
+    .admin-btn.success:hover {
+      background: rgba(40, 167, 69, 0.95);
+    }
+
+    .admin-btn.danger {
+      background: #ff3b30;
+      color: #ffffff;
+    }
+
+    .admin-btn.danger:hover {
+      background: #d70015;
+    }
+
+    .admin-btn.warning {
+      background: #ff9500;
+      color: #ffffff;
+    }
+
+    .admin-btn.warning:hover {
+      background: #e6820e;
+    }
+
+    .records-section {
       background: rgba(249, 250, 251, 0.7);
       backdrop-filter: blur(10px);
       border-radius: 20px;
       padding: 28px;
+      margin-top: 32px;
       border: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow: 
         0 8px 25px rgba(0, 0, 0, 0.03),
@@ -619,358 +680,213 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    #result h2 {
-      font-size: 1.3em;
-      font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 24px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e2e8f0;
-      background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    #result h3 {
-      color: var(--text-primary);
-      font-size: 1.1em;
-      font-weight: 600;
-      margin: 24px 0 16px 0;
-      padding: 12px 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
-    }
-
-    #result h4 {
-      color: #64748b;
-      font-size: 0.95em;
+    .section-title {
+      font-size: 0.9em;
       font-weight: 500;
-      margin: 16px 0 12px 20px;
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
-      border-left: 3px solid #cbd5e1;
+      color: #424245;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
     }
 
-    #result hr {
-      margin: 16px 0;
-      border: none;
-      border-top: 1px solid rgba(226, 232, 240, 0.6);
-    }
-
-    /* レコードカードのスタイル */
-    .record-card {
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(226, 232, 240, 0.5);
+    .record {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
       border-radius: 12px;
-      padding: 14px 16px;
-      margin: 8px 0;
-      transition: all 0.2s ease;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      font-size: 0.95em;
+      color: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      min-height: 60px;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.02),
+        0 1px 4px rgba(0, 0, 0, 0.01),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      /* iPad の長押しメニューを無効化 */
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .record-card:hover {
+    .record:hover {
       background: rgba(255, 255, 255, 0.95);
-      border-color: rgba(59, 130, 246, 0.2);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transform: translateX(4px) translateY(-1px);
+      box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.04),
+        0 3px 8px rgba(0, 0, 0, 0.02),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .record.long-pressing {
+      background: rgba(255, 59, 48, 0.1);
+      border-color: rgba(255, 59, 48, 0.3);
+    }
+
+    .record:last-child {
+      margin-bottom: 0;
     }
 
     .record-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
       flex: 1;
     }
 
-    .record-buttons {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      flex-shrink: 0;
-      margin-left: 16px;
+    .record-name {
+      font-weight: 500;
+      color: #1d1d1f;
+      margin-bottom: 2px;
     }
 
     .record-time {
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 0.9em;
-    }
-
-    .record-date {
-      font-weight: 600;
-      color: #1e293b;
       font-size: 0.85em;
-      margin-right: 8px;
+      color: #8e8e93;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-badge {
       padding: 4px 8px;
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.2);
       border-radius: 6px;
-      transition: all 0.3s ease;
-    }
-
-    /* ステータスバッジのスタイル改善 */
-    .record-status {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 12px;
-      border-radius: 16px;
       font-size: 0.75em;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-      border: none;
-      position: relative;
-      margin-left: 8px;
-    }
-
-    .status-paid {
-      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-      color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-      box-shadow: 
-        0 3px 8px rgba(139, 92, 246, 0.4),
-        0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .status-complete {
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      box-shadow: 
-        0 3px 8px rgba(34, 197, 94, 0.3),
-        0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .status-incomplete {
-      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-      color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      box-shadow: 
-        0 3px 8px rgba(248, 113, 113, 0.3),
-        0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    /* iOS風通知システム */
-    .toast-notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-container);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-primary);
-      border-radius: 16px;
-      padding: 16px 24px;
-      box-shadow: var(--shadow-primary);
-      z-index: 2000;
-      opacity: 0;
-      transform: translateX(-50%) translateY(-100%) scale(0.9);
-      animation: slideInToast 0.4s ease-out forwards;
-      max-width: 400px;
-      min-width: 300px;
-      transition: background 0.3s ease, border-color 0.3s ease;
-    }
-
-    /* ダークモード時の通知強制適用 */
-    [data-theme="dark"] .toast-notification {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
-    }
-
-    .toast-notification.success {
-      border-left: 4px solid #22c55e;
-    }
-
-    .toast-notification.error {
-      border-left: 4px solid #ef4444;
-    }
-
-    .toast-notification.info {
-      border-left: 4px solid #3b82f6;
-    }
-
-    .toast-notification.warning {
-      border-left: 4px solid #f59e0b;
-    }
-
-    .toast-content {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .toast-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      color: white;
-      flex-shrink: 0;
-    }
-
-    .toast-notification.success .toast-icon {
-      background: #22c55e;
-    }
-
-    .toast-notification.error .toast-icon {
-      background: #ef4444;
-    }
-
-    .toast-notification.info .toast-icon {
-      background: #3b82f6;
-    }
-
-    .toast-notification.warning .toast-icon {
-      background: #f59e0b;
-    }
-
-    .toast-message {
-      flex: 1;
-      font-size: 0.95em;
       font-weight: 500;
-      color: var(--text-primary);
-      line-height: 1.4;
-      transition: color 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    @keyframes slideInToast {
+    .status-working {
+      background: #e8f5e8;
+      color: #28a745;
+    }
+
+    .status-completed {
+      background: #e5e5ea;
+      color: #8e8e93;
+    }
+
+    .status-overtime {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .delete-btn {
+      background: #ff3b30;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.75em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-left: 8px;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: deleteButtonAppear 0.3s ease-out forwards;
+    }
+
+    .delete-btn:hover {
+      background: #d70015;
+      transform: scale(1.05);
+    }
+
+    @keyframes deleteButtonAppear {
       from {
         opacity: 0;
-        transform: translateX(-50%) translateY(-100%) scale(0.9);
+        transform: scale(0.8);
       }
       to {
         opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
+        transform: scale(1);
       }
     }
 
-    @keyframes slideOutToast {
-      from {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
-      }
-      to {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-100%) scale(0.9);
-      }
-    }
-
-    /* iOS風確認ダイアログ */
-    .ios-dialog {
+    /* 確認ダイアログのスタイル */
+    .confirm-dialog {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 3000;
+      z-index: 2000;
       opacity: 0;
       animation: fadeIn 0.3s ease-out forwards;
     }
 
-    .ios-dialog-content {
-      background: var(--bg-container);
+    .confirm-dialog-content {
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-radius: 20px;
-      width: 320px;
-      max-width: 90vw;
-      overflow: hidden;
-      box-shadow: var(--shadow-primary);
-      transform: scale(0.9);
-      animation: dialogScale 0.3s ease-out forwards;
-      transition: background 0.3s ease;
-    }
-
-    /* ダークモード時のダイアログ強制適用 */
-    [data-theme="dark"] .ios-dialog-content {
-      background: #2d2d30 !important;
-    }
-
-    .ios-dialog-header {
-      padding: 24px 20px 16px;
+      padding: 32px;
+      margin: 20px;
+      max-width: 400px;
+      width: 100%;
       text-align: center;
-      border-bottom: 1px solid var(--border-primary);
-      transition: border-color 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.1),
+        0 10px 25px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(255, 255, 255, 0.4);
+      transform: scale(0.9);
+      animation: dialogAppear 0.3s ease-out forwards;
     }
 
-    [data-theme="dark"] .ios-dialog-header {
-      border-bottom: 1px solid #46464b !important;
-    }
-
-    .ios-dialog-title {
-      font-size: 1.1em;
+    .confirm-dialog h3 {
+      font-size: 1.2em;
       font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-      transition: color 0.3s ease;
+      color: #1e293b;
+      margin-bottom: 16px;
     }
 
-    .ios-dialog-message {
-      font-size: 0.9em;
-      color: var(--text-secondary);
-      line-height: 1.4;
-      white-space: pre-line;
-      transition: color 0.3s ease;
+    .confirm-dialog p {
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.5;
     }
 
-    .ios-dialog-buttons {
+    .confirm-buttons {
       display: flex;
-      background: var(--bg-card);
-      transition: background 0.3s ease;
+      gap: 12px;
+      justify-content: center;
     }
 
-    [data-theme="dark"] .ios-dialog-buttons {
-      background: #373738 !important;
-    }
-
-    .ios-dialog-button {
-      flex: 1;
-      padding: 16px;
+    .confirm-btn {
+      padding: 12px 24px;
       border: none;
-      background: transparent;
-      font-size: 1em;
+      border-radius: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
-      color: #3b82f6;
+      transition: all 0.3s ease;
+      min-width: 80px;
     }
 
-    .ios-dialog-button:hover {
-      background: rgba(59, 130, 246, 0.1);
+    .confirm-btn.cancel {
+      background: #f2f2f7;
+      color: #424245;
     }
 
-    .ios-dialog-button.primary {
-      color: #ef4444;
-      font-weight: 600;
+    .confirm-btn.cancel:hover {
+      background: #e5e5ea;
     }
 
-    .ios-dialog-button.primary:hover {
-      background: rgba(239, 68, 68, 0.1);
+    .confirm-btn.delete {
+      background: #ff3b30;
+      color: #ffffff;
     }
 
-    .ios-dialog-button + .ios-dialog-button {
-      border-left: 1px solid var(--border-primary);
-      transition: border-color 0.3s ease;
+    .confirm-btn.delete:hover {
+      background: #d70015;
     }
 
     @keyframes fadeIn {
@@ -982,7 +898,7 @@
       }
     }
 
-    @keyframes dialogScale {
+    @keyframes dialogAppear {
       from {
         opacity: 0;
         transform: scale(0.9);
@@ -993,21 +909,245 @@
       }
     }
 
-    /* ユーティリティクラス */
-    .hidden {
-      display: none !important;
+    .summary-button {
+      background: linear-gradient(135deg, #a7f3d0 0%, #fde68a 100%);
+      color: #374151;
+      padding: 16px 24px;
+      font-size: 0.95em;
+      font-weight: 500;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      margin: 16px 0;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 
+        0 6px 20px rgba(167, 243, 208, 0.3),
+        0 2px 8px rgba(167, 243, 208, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      position: relative;
+      overflow: hidden;
     }
 
-    .text-center {
+    .summary-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .summary-button:hover {
+      background: linear-gradient(135deg, #86efac 0%, #fcd34d 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 30px rgba(167, 243, 208, 0.4),
+        0 6px 16px rgba(167, 243, 208, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .summary-button:hover::before {
+      left: 100%;
+    }
+
+    .summary-button.close-mode {
+      background: linear-gradient(135deg, #f87171 0%, #fbbf24 100%);
+      color: #ffffff;
+      box-shadow: 
+        0 6px 20px rgba(248, 113, 113, 0.3),
+        0 2px 8px rgba(248, 113, 113, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .summary-button.close-mode:hover {
+      background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 30px rgba(248, 113, 113, 0.4),
+        0 6px 16px rgba(248, 113, 113, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .summary-button.close-mode::before {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    }
+
+    .summary-button.close-mode:hover::before {
+      left: 100%;
+    }
+
+    .summary-panel {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 32px;
+      margin: 24px 0;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.08),
+        0 10px 25px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(255, 255, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      display: none;
+      animation: slideDown 0.4s ease-out;
+      position: relative;
+    }
+
+    .summary-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+      border-radius: 24px 24px 0 0;
+    }
+
+    .summary-header {
       text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f0f0f0;
     }
 
-    .mb-0 { margin-bottom: 0; }
-    .mb-1 { margin-bottom: 8px; }
-    .mb-2 { margin-bottom: 16px; }
-    .mb-3 { margin-bottom: 24px; }
+    .summary-title {
+      font-size: 1.3em;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 8px;
+    }
 
-    /* アニメーション */
+    .summary-period {
+      font-size: 0.9em;
+      color: #8e8e93;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.03),
+        0 2px 8px rgba(0, 0, 0, 0.02),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 30px rgba(0, 0, 0, 0.05),
+        0 6px 16px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: 600;
+      color: #007aff;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.8em;
+      color: #8e8e93;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-details {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+
+    .close-summary {
+      background: #f2f2f7;
+      color: #424245;
+      padding: 10px 16px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 16px;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .close-summary:hover {
+      background: #e5e5ea;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #8e8e93;
+      font-style: italic;
+      padding: 40px 20px;
+    }
+
+    /* Alert styles */
+    .alert {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 18px 28px;
+      border-radius: 16px;
+      color: #ffffff;
+      font-weight: 500;
+      font-size: 0.95em;
+      z-index: 1000;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.15),
+        0 8px 20px rgba(0,0,0,0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      opacity: 0;
+      animation: slideInAlertTop 0.4s ease-out forwards;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .alert.success {
+      background: rgba(52, 199, 89, 0.95);
+    }
+
+    .alert.error {
+      background: rgba(255, 59, 48, 0.95);
+    }
+
+    .alert.info {
+      background: rgba(0, 122, 255, 0.95);
+    }
+
     @keyframes fadeInDown {
       from {
         opacity: 0;
@@ -1041,1745 +1181,1474 @@
       }
     }
 
-    /* レスポンシブデザイン */
-    @media (max-width: 768px) {
+    @keyframes slideInAlertTop {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-100%) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideOutAlertTop {
+      from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-100%) scale(0.9);
+      }
+    }
+
+    /* iPad styles */
+    @media (min-width: 768px) and (max-width: 1024px) {
       .container {
-        padding: 20px 16px;
+        max-width: 600px;
+        padding: 50px;
+      }
+
+      .clock {
+        margin-bottom: 50px;
+        padding: 24px;
+      }
+
+      .clock-date {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+      }
+
+      .clock-time {
+        font-size: 2.6em;
+      }
+
+      .form-group {
+        margin-bottom: 30px;
+      }
+
+      input[type="text"] {
+        padding: 20px 24px;
+        font-size: 1.1em;
+      }
+
+      #empName {
+        padding-right: 52px;
+      }
+
+      #searchEmpName {
+        padding-right: 52px;
+      }
+
+      .clear-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+      }
+
+      .btn-primary {
+        padding: 20px 32px;
+        font-size: 1.1em;
+      }
+
+      .menu-toggle {
+        width: 50px;
+        height: 50px;
+        font-size: 1.3em;
+      }
+
+      .admin-btn {
+        padding: 16px 20px;
+        font-size: 1em;
+      }
+
+      .records-section {
+        padding: 30px;
+      }
+
+      .record {
+        padding: 20px;
+        margin-bottom: 12px;
+      }
+
+      .record-name {
+        font-size: 1.05em;
+      }
+
+      .record-time {
+        font-size: 0.95em;
+      }
+
+      /* iPad用ドロップダウン調整 */
+      .dropdown-menu {
+        max-height: 320px;
+      }
+
+      .dropdown-item {
+        padding: 18px 24px;
+        font-size: 1.1em;
+        min-height: 60px;
+      }
+
+      .dropdown-item-info {
+        font-size: 0.9em;
+      }
+
+      .dropdown-empty {
+        padding: 24px;
+        font-size: 1em;
+      }
+    }
+
+    /* Mobile styles */
+    @media (max-width: 767px) {
+      .container {
+        padding: 30px 20px;
         margin: 10px;
-        border-radius: 16px;
       }
 
       h1 {
         font-size: 1.5em;
-        margin-bottom: 24px;
       }
 
-      .form-group {
-        margin-bottom: 14px;
-      }
-
-      input[type="text"],
-      input[type="time"],
-      input[type="number"],
-      input[type="date"] {
-        padding: 10px 14px;
-        min-height: 38px;
-      }
-
-      .btn-group,
-      .backup-restore-buttons {
+      .button-group {
         flex-direction: column;
-        align-items: stretch;
+        gap: 12px;
       }
 
-      .btn-group button,
-      .backup-restore-buttons button {
+      .primary-buttons {
         width: 100%;
-        margin-bottom: 6px;
       }
 
-      .btn-group button:last-child,
-      .backup-restore-buttons button:last-child {
-        margin-bottom: 0;
+      .menu-toggle {
+        align-self: center;
       }
 
+      .alert {
+        right: 10px;
+        left: 10px;
+        transform: translateX(0);
+        animation: slideInAlertMobile 0.3s ease-out forwards;
+      }
+
+      /* スマホ用ドロップダウン調整 */
       .dropdown-menu {
-        max-height: 200px;
-        border-radius: 10px;
+        max-height: 240px;
+        border-radius: 12px;
       }
 
       .dropdown-item {
-        padding: 12px 14px;
-        min-height: 44px;
+        padding: 16px 18px;
+        font-size: 1em;
+        min-height: 52px;
       }
 
-      #result {
-        padding: 16px;
+      .dropdown-item-info {
+        font-size: 0.85em;
+        margin-left: 6px;
       }
 
-      .record-card {
-        padding: 10px 12px;
-        flex-direction: column;
-        align-items: stretch;
-        min-height: auto;
+      .dropdown-empty {
+        padding: 20px 16px;
+        font-size: 0.9em;
       }
 
-      .record-info {
-        margin-bottom: 8px;
-        justify-content: flex-start;
+      .dropdown-item:first-child {
+        border-radius: 12px 12px 0 0;
       }
 
-      .record-buttons {
-        justify-content: flex-start;
-        margin-top: 8px;
-        margin-left: 0;
-        width: 100%;
+      .dropdown-item:last-child {
+        border-radius: 0 0 12px 12px;
       }
 
-      .record-buttons button {
-        flex: 1;
-        min-width: 70px;
+      .dropdown-item:first-child:last-child {
+        border-radius: 12px;
       }
 
-      #result > div {
-        margin-left: 12px;
-      }
-
-      /* モバイル用の通知位置調整 */
-      .toast-notification {
+      /* スマホ用のインストールプロンプト調整 */
+      .install-prompt {
+        bottom: 10px;
         left: 10px;
         right: 10px;
-        transform: translateX(0);
-        max-width: none;
+        transform: none;
+        border-radius: 16px;
       }
 
-      @keyframes slideInToast {
+      .install-prompt.show {
+        animation: slideInAlertMobile 0.3s ease-out;
+      }
+
+      @keyframes slideInAlertMobile {
         from {
           opacity: 0;
-          transform: translateY(-100%) scale(0.9);
+          transform: translateY(100%);
         }
         to {
           opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-      }
-
-      @keyframes slideOutToast {
-        from {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-        to {
-          opacity: 0;
-          transform: translateY(-100%) scale(0.9);
+          transform: translateY(0);
         }
       }
     }
 
-    @media (min-width: 769px) and (max-width: 1024px) {
-      .container {
-        max-width: 900px;
-        padding: 28px;
-      }
-
-      .dropdown-menu {
-        max-height: 280px;
-      }
-    }
-
+    /* Large screens */
     @media (min-width: 1025px) {
       .container {
-        max-width: 1000px;
+        max-width: 500px;
       }
     }
 
-    /* フォーカススタイル */
+    /* Focus styles for accessibility */
     button:focus-visible {
-      outline: 2px solid #3b82f6;
+      outline: 2px solid #007aff;
       outline-offset: 2px;
     }
 
     input:focus-visible {
       outline: none;
     }
-
-    /* 印刷用スタイル */
-    @media print {
-      body {
-        background: white;
-      }
-      
-      .container {
-        background: white;
-        box-shadow: none;
-        border: 1px solid #ccc;
-      }
-      
-      button {
-        display: none;
-      }
-      
-      .backup-restore-buttons {
-        display: none;
-      }
-    }
   </style>
 </head>
 <body>
-  <!-- ダークモードトグル -->
-  <button class="theme-toggle" id="themeToggle">🌙</button>
+  <!-- オフライン状態インジケーター -->
+  <div class="offline-indicator" id="offlineIndicator">
+    オフラインモードで動作中
+  </div>
+  
+  <!-- PWAインストールプロンプト -->
+  <button class="install-prompt" id="installPrompt" style="display: none;">
+    📱 アプリとしてインストール
+  </button>
 
   <div class="logo">
-    <img src="logo.png" alt="勤怠管理ロゴ">
+    <img src="logo.png" alt="勤怠管理ロゴ" id="logoImg" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex';">
+    <div class="logo-fallback" id="logoFallback" style="display: none;">勤</div>
   </div>
-
   <div class="container">
-    <h1>勤怠管理</h1>
-
-    <!-- フォーム開始 -->
-    <form id="timeCardForm">
-
-      <div class="form-group">
-        <label for="name">名前</label>
-        <div class="input-wrapper">
-          <input type="text" id="name" required placeholder="従業員名を入力">
-          <button type="button" class="clear-btn" id="clearNameBtn">×</button>
-          <div class="dropdown-menu" id="nameDropdown"></div>
-        </div>
-      </div>
-
-      <div class="form-group" id="normalDateGroup">
-        <label for="dateSingle">月日</label>
-        <input type="date" id="dateSingle" required>
-      </div>
-
-      <div class="form-group hidden" id="paidLeaveYearGroup">
-        <label for="paidLeaveYear">有給用 西暦</label>
-        <input type="number" id="paidLeaveYear" min="2020" max="2100" step="1">
-      </div>
-
-      <div class="form-group hidden" id="multiDateGroup">
-        <label for="dateMulti">月日 (複数入力、カンマ区切り)</label>
-        <input type="text" id="dateMulti" placeholder="例: 03-10, 03-11">
-      </div>
-
-      <div class="form-group">
-        <label for="checkIn">出勤時間</label>
-        <input type="time" id="checkIn" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="checkOut">退勤時間</label>
-        <input type="time" id="checkOut">
-      </div>
-
-      <!-- 有給チェック -->
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="isPaidLeave">
-          有給として登録する
-        </label>
-      </div>
-
-      <!-- フォーム内のボタン -->
-      <div class="btn-group main-buttons">
-        <button type="submit" id="submitBtn" class="btn-primary">送信</button>
-        <button type="button" id="cancelEditBtn" class="btn-secondary hidden">編集キャンセル</button>
-        <button type="button" id="exportBtn" class="btn-dark-success">Excelエクスポート</button>
-        <button type="button" id="clearDataBtn" class="btn-danger">データをクリア</button>
-      </div>
-
-    </form>
-    <!-- フォーム終了 -->
-
-    <!-- バックアップ・リストアのボタン -->
-    <div class="backup-restore-buttons">
-      <button type="button" id="backupBtn" class="btn-success">データをバックアップ</button>
-      <button type="button" id="backupLatestMonthBtn" class="btn-info">最新の月をバックアップ</button>
-      <input type="file" id="restoreFile" style="display: none;">
-      <button type="button" id="restoreBtn" class="btn-warning">データをリストア</button>
+    <div class="clock">
+      <div class="clock-date" id="clockDate">2025年6月30日（月）</div>
+      <div class="clock-time" id="clockTime">14:32:45</div>
     </div>
-
-    <!-- 検索 -->
     <div class="form-group">
-      <label for="searchName">名前で検索</label>
+      <label for="empName">名前</label>
       <div class="input-wrapper">
-        <input type="text" id="searchName" placeholder="名前を入力して検索">
-        <button type="button" class="clear-btn" id="clearSearchBtn">×</button>
-        <div class="dropdown-menu" id="searchDropdown"></div>
+        <input type="text" id="empName" placeholder="氏名を入力">
+        <button type="button" class="clear-btn" id="clearEmpNameBtn">×</button>
+        <div class="dropdown-menu" id="empNameDropdown"></div>
       </div>
     </div>
-
-    <!-- タイムカード一覧表示 -->
-    <div id="result"></div>
+    <div class="form-group button-group">
+      <div class="primary-buttons">
+        <button id="btnClockIn" class="btn-primary" disabled>出勤</button>
+        <button id="btnClockOut" class="btn-primary" disabled>退勤</button>
+      </div>
+      <button id="toggleMenu" class="menu-toggle">⚙</button>
+    </div>
+    <div id="adminMenu">
+      <button id="backupBtn" class="admin-btn success">バックアップ</button>
+      <button id="restoreBtn" class="admin-btn warning">リストア</button>
+      <input type="file" id="restoreFile" style="display:none;">
+      <button id="clearAllBtn" class="admin-btn danger">全データ削除</button>
+    </div>
+    <div class="form-group">
+      <label for="searchEmpName">検索</label>
+      <div class="input-wrapper">
+        <input type="text" id="searchEmpName" placeholder="名前で検索">
+        <button type="button" class="clear-btn" id="clearSearchBtn">×</button>
+        <div class="dropdown-menu" id="searchEmpNameDropdown"></div>
+      </div>
+    </div>
+    <div class="records-section">
+      <div class="section-title">勤怠記録</div>
+      <div id="summaryContainer"></div>
+      <div id="empResult"></div>
+    </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
   <script>
-/***********************************************
- * ダークモード機能
- ***********************************************/
+    const STORAGE_KEY = 'timeCards';
+    let deferredPrompt; // PWAインストールプロンプト用
 
-// テーマの初期化と切り替え
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  applyTheme(savedTheme);
-}
+    // Service Worker登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-  }
-  localStorage.setItem('theme', theme);
-  
-  // ダークモード時の強制スタイル適用
-  if (theme === 'dark') {
-    applyDarkModeStyles();
-  } else {
-    removeDarkModeStyles();
-  }
-}
-
-function applyDarkModeStyles() {
-  // 既存のダークモードスタイルがあれば削除
-  const existingStyle = document.getElementById('dark-mode-override');
-  if (existingStyle) {
-    existingStyle.remove();
-  }
-  
-  // 新しいダークモードスタイルを追加
-  const style = document.createElement('style');
-  style.id = 'dark-mode-override';
-  style.textContent = `
-    [data-theme="dark"] body {
-      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%) !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .container {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] h1 {
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] label {
-      color: #cccccc !important;
-    }
-    
-    [data-theme="dark"] input[type="text"],
-    [data-theme="dark"] input[type="time"], 
-    [data-theme="dark"] input[type="number"],
-    [data-theme="dark"] input[type="date"] {
-      background: #3c3c41 !important;
-      border: 1px solid #505055 !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] input[type="text"]:focus,
-    [data-theme="dark"] input[type="time"]:focus,
-    [data-theme="dark"] input[type="number"]:focus,
-    [data-theme="dark"] input[type="date"]:focus {
-      background: #46464b !important;
-      border-color: #3b82f6 !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] input[type="text"]::placeholder {
-      color: #888888 !important;
-    }
-    
-    [data-theme="dark"] #result {
-      background: #232326 !important;
-      border: 1px solid #46464b !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] #result h2 {
-      color: #ffffff !important;
-      border-bottom: 2px solid #46464b !important;
-      background: none !important;
-      -webkit-background-clip: initial !important;
-      -webkit-text-fill-color: #ffffff !important;
-      background-clip: initial !important;
-    }
-    
-    [data-theme="dark"] #result h3 {
-      color: #ffffff !important;
-      background: #373738 !important;
-      border: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .record-card {
-      background: #373738 !important;
-      border: 1px solid #46464b !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .record-card:hover {
-      background: #404045 !important;
-      border-color: rgba(59, 130, 246, 0.5) !important;
-    }
-    
-    [data-theme="dark"] .record-time,
-    [data-theme="dark"] .record-date {
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .record-date {
-      background: rgba(59, 130, 246, 0.2) !important;
-      border: 1px solid rgba(59, 130, 246, 0.4) !important;
-    }
-    
-    [data-theme="dark"] .record-date {
-      background: rgba(59, 130, 246, 0.2) !important;
-      border: 1px solid rgba(59, 130, 246, 0.4) !important;
-    }
-    
-    [data-theme="dark"] .dropdown-menu {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .dropdown-item {
-      color: #ffffff !important;
-      border-bottom: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .dropdown-item-info {
-      color: #888888 !important;
-    }
-    
-    [data-theme="dark"] .dropdown-empty {
-      color: #888888 !important;
-    }
-    
-    [data-theme="dark"] .checkbox-label {
-      color: #cccccc !important;
-    }
-    
-    [data-theme="dark"] .clear-btn {
-      background: #46464b !important;
-      color: #cccccc !important;
-    }
-    
-    [data-theme="dark"] .clear-btn:hover {
-      background: #505055 !important;
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .theme-toggle {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .toast-notification {
-      background: #2d2d30 !important;
-      border: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .toast-message {
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-content {
-      background: #2d2d30 !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-header {
-      border-bottom: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-title {
-      color: #ffffff !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-message {
-      color: #cccccc !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-buttons {
-      background: #373738 !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-button {
-      color: #3b82f6 !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-button.primary {
-      color: #ef4444 !important;
-    }
-    
-    [data-theme="dark"] .ios-dialog-button + .ios-dialog-button {
-      border-left: 1px solid #46464b !important;
-    }
-    
-    [data-theme="dark"] .btn-secondary {
-      background: #373738 !important;
-      border: 1px solid #46464b !important;
-      color: #3b82f6 !important;
-    }
-    
-    [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-      background: rgba(59, 130, 246, 0.1) !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function removeDarkModeStyles() {
-  const existingStyle = document.getElementById('dark-mode-override');
-  if (existingStyle) {
-    existingStyle.remove();
-  }
-}
-
-function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  applyTheme(newTheme);
-  showToast(`${newTheme === 'dark' ? 'ダーク' : 'ライト'}モードに変更しました`, 'info', 2000);
-}
-
-/***********************************************
- * 編集機能用のグローバル変数
- ***********************************************/
-let editingRecord = null; // 編集中のレコード情報 {name, date, index}
-
-/***********************************************
- * ドロップダウン機能の変数とフラグ
- ***********************************************/
-let isDropdownActionInProgress = false;
-
-/***********************************************
- * iOS風通知システム
- ***********************************************/
-
-// iOS風通知システム
-function showToast(message, type = 'info', duration = 3000) {
-  const toast = document.createElement('div');
-  toast.className = `toast-notification ${type}`;
-  
-  const iconMap = {
-    success: '✓',
-    error: '✕',
-    info: 'i',
-    warning: '!'
-  };
-  
-  toast.innerHTML = `
-    <div class="toast-content">
-      <div class="toast-icon">${iconMap[type] || 'i'}</div>
-      <div class="toast-message">${message}</div>
-    </div>
-  `;
-  
-  document.body.appendChild(toast);
-  
-  // 自動削除
-  setTimeout(() => {
-    toast.style.animation = 'slideOutToast 0.3s ease-in forwards';
-    setTimeout(() => {
-      if (document.body.contains(toast)) {
-        document.body.removeChild(toast);
-      }
-    }, 300);
-  }, duration);
-}
-
-// iOS風確認ダイアログ
-function showConfirmDialog(title, message, onConfirm, confirmText = '削除', cancelText = 'キャンセル') {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('div');
-    dialog.className = 'ios-dialog';
-    
-    dialog.innerHTML = `
-      <div class="ios-dialog-content">
-        <div class="ios-dialog-header">
-          <div class="ios-dialog-title">${title}</div>
-          <div class="ios-dialog-message">${message}</div>
-        </div>
-        <div class="ios-dialog-buttons">
-          <button class="ios-dialog-button">${cancelText}</button>
-          <button class="ios-dialog-button primary">${confirmText}</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    const [cancelBtn, confirmBtn] = dialog.querySelectorAll('.ios-dialog-button');
-    
-    const closeDialog = () => {
-      dialog.style.opacity = '0';
-      setTimeout(() => {
-        if (document.body.contains(dialog)) {
-          document.body.removeChild(dialog);
-        }
-      }, 300);
-    };
-    
-    cancelBtn.addEventListener('click', () => {
-      closeDialog();
-      resolve(false);
+    // PWAインストールプロンプト
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installButton = document.getElementById('installPrompt');
+      installButton.style.display = 'block';
+      installButton.classList.add('show');
     });
-    
-    confirmBtn.addEventListener('click', () => {
-      onConfirm();
-      closeDialog();
-      resolve(true);
-    });
-    
-    // 背景クリックで閉じる
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) {
-        closeDialog();
-        resolve(false);
-      }
-    });
-  });
-}
 
-// iOS風プロンプトダイアログ
-function showPromptDialog(title, message, defaultValue = '') {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('div');
-    dialog.className = 'ios-dialog';
-    
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const inputStyle = isDark ? `
-      width: 100%;
-      margin-top: 16px;
-      padding: 12px;
-      border: 1px solid rgba(80, 80, 85, 0.6);
-      border-radius: 8px;
-      font-size: 1em;
-      outline: none;
-      background: rgba(60, 60, 65, 0.8);
-      color: #ffffff;
-    ` : `
-      width: 100%;
-      margin-top: 16px;
-      padding: 12px;
-      border: 1px solid rgba(0,0,0,0.2);
-      border-radius: 8px;
-      font-size: 1em;
-      outline: none;
-    `;
-    
-    dialog.innerHTML = `
-      <div class="ios-dialog-content">
-        <div class="ios-dialog-header">
-          <div class="ios-dialog-title">${title}</div>
-          <div class="ios-dialog-message">${message}</div>
-          <input type="text" value="${defaultValue}" style="${inputStyle}">
-        </div>
-        <div class="ios-dialog-buttons">
-          <button class="ios-dialog-button">キャンセル</button>
-          <button class="ios-dialog-button primary">OK</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    const input = dialog.querySelector('input');
-    const [cancelBtn, confirmBtn] = dialog.querySelectorAll('.ios-dialog-button');
-    
-    // 入力フィールドにフォーカス
-    setTimeout(() => input.focus(), 100);
-    
-    const closeDialog = () => {
-      dialog.style.opacity = '0';
-      setTimeout(() => {
-        if (document.body.contains(dialog)) {
-          document.body.removeChild(dialog);
-        }
-      }, 300);
-    };
-    
-    cancelBtn.addEventListener('click', () => {
-      closeDialog();
-      resolve(null);
-    });
-    
-    confirmBtn.addEventListener('click', () => {
-      const value = input.value.trim();
-      closeDialog();
-      resolve(value);
-    });
-    
-    // Enterキーで確定
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const value = input.value.trim();
-        closeDialog();
-        resolve(value);
-      }
-    });
-  });
-}
-
-/***********************************************
- * 期間取得用 関数群
- *   毎月11日～翌月10日を1期間とする
- ***********************************************/
-
-/**
- * 与えられた "YYYY-MM-DD" が含まれる期間の開始日と終了日を返す。
- *   例: 2/11～3/10 は start=2/11, end=3/10
- *   例: 3/11～4/10 は start=3/11, end=4/10
- */
-function getMonthPeriod(dateString) {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  let startYear = date.getFullYear();
-  let startMonth = date.getMonth(); // 0-11
-  if (day < 11) {
-    // 11日より前なら先月11日～当月10日が期間
-    startMonth--;
-    if (startMonth < 0) {
-      startMonth = 11;
-      startYear--;
-    }
-  }
-  const start = new Date(startYear, startMonth, 11);
-
-  // 終了日は startの月+1 の10日
-  let endYear = startYear;
-  let endMonth = startMonth + 1;
-  if (endMonth > 11) {
-    endMonth = 0;
-    endYear++;
-  }
-  const end = new Date(endYear, endMonth, 10);
-  return { start, end };
-}
-
-/**
- * 今日基準で「最新の月」(毎月11日開始～翌月10日終了) を返す。
- */
-function getLatestMonthPeriod() {
-  const today = new Date();
-  const day = today.getDate();
-  let startYear = today.getFullYear();
-  let startMonth = today.getMonth();
-  if (day < 11) {
-    startMonth--;
-    if (startMonth < 0) {
-      startMonth = 11;
-      startYear--;
-    }
-  }
-  const start = new Date(startYear, startMonth, 11);
-
-  let endYear = startYear;
-  let endMonth = startMonth + 1;
-  if (endMonth > 11) {
-    endMonth = 0;
-    endYear++;
-  }
-  const end = new Date(endYear, endMonth, 10);
-  return { start, end };
-}
-
-/***********************************************
- * 計算・ユーティリティ関数
- ***********************************************/
-
-// 出勤・退勤の差(小数点2桁)
-function calculateTimeDifference(startTime, endTime) {
-  const start = new Date(`1970-01-01T${startTime}`);
-  const end = new Date(`1970-01-01T${endTime}`);
-  const diff = (end - start) / (1000 * 60 * 60);
-  return parseFloat(diff.toFixed(2));
-}
-
-// 早朝勤務時間(08:30まで)
-function calculateEarlyMorningTime(startTime, endTime) {
-  const endLimit = new Date('1970-01-01T08:30');
-  const start = new Date(`1970-01-01T${startTime}`);
-  const end = new Date(`1970-01-01T${endTime}`);
-  if (end <= endLimit) {
-    return calculateTimeDifference(startTime, endTime);
-  } else if (start < endLimit) {
-    return calculateTimeDifference(startTime, '08:30');
-  }
-  return 0;
-}
-
-// 夕方勤務時間(16:00以降)
-function calculateEveningTime(startTime, endTime) {
-  const startLimit = new Date('1970-01-01T16:00');
-  const start = new Date(`1970-01-01T${startTime}`);
-  const end = new Date(`1970-01-01T${endTime}`);
-  if (start >= startLimit) {
-    return calculateTimeDifference(startTime, endTime);
-  } else if (end > startLimit) {
-    return calculateTimeDifference('16:00', endTime);
-  }
-  return 0;
-}
-
-// "YYYY-MM-DD" → "MM-DD"
-function formatDate(dateString) {
-  const parts = dateString.split('-');
-  if (parts.length === 3) {
-    return `${parts[1]}-${parts[2]}`;
-  }
-  return dateString;
-}
-
-/***********************************************
- * ドロップダウン機能
- ***********************************************/
-
-// 名前の使用順序を更新
-function updateNameUsageOrder(name) {
-  let nameUsage = JSON.parse(localStorage.getItem('nameUsageOrder') || '{}');
-  // 現在のタイムスタンプを使用順序として記録
-  nameUsage[name] = Date.now();
-  localStorage.setItem('nameUsageOrder', JSON.stringify(nameUsage));
-}
-
-// 既存の名前リストを取得（使用順）
-function getExistingNames() {
-  const data = JSON.parse(localStorage.getItem('timeCards') || '{}');
-  const nameUsage = JSON.parse(localStorage.getItem('nameUsageOrder') || '{}');
-  const names = Object.keys(data);
-  
-  // 各名前の使用順序を取得してソート
-  const namesWithUsage = names.map(name => {
-    const lastUsed = nameUsage[name] || 0; // 使用順序（数字が大きいほど最近使用）
-    return { name, lastUsed };
-  });
-  
-  // 使用順序の降順でソート（最近使った順）
-  namesWithUsage.sort((a, b) => {
-    return b.lastUsed - a.lastUsed;
-  });
-  
-  return namesWithUsage.map(item => item.name);
-}
-
-// クリアボタンの表示制御
-function updateClearButton(inputId, clearBtnId) {
-  const input = document.getElementById(inputId);
-  const clearBtn = document.getElementById(clearBtnId);
-  
-  if (input && clearBtn) {
-    if (input.value.trim()) {
-      clearBtn.classList.add('show');
-    } else {
-      clearBtn.classList.remove('show');
-    }
-  }
-}
-
-// ドロップダウンメニューを表示
-function showDropdown(inputId, dropdownId) {
-  if (isDropdownActionInProgress) return;
-  
-  // 他のドロップダウンを先に閉じる
-  if (dropdownId === 'nameDropdown') {
-    hideDropdown('searchDropdown');
-  } else if (dropdownId === 'searchDropdown') {
-    hideDropdown('nameDropdown');
-  }
-  
-  const input = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropdownId);
-  const names = getExistingNames();
-  const inputValue = input.value.toLowerCase().trim();
-  
-  // 入力値でフィルタリング
-  const filteredNames = names.filter(name => 
-    name.toLowerCase().includes(inputValue)
-  );
-  
-  dropdown.innerHTML = '';
-  
-  if (filteredNames.length === 0) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'dropdown-empty';
-    emptyDiv.textContent = inputValue ? '該当する名前が見つかりません' : '記録された名前はありません';
-    dropdown.appendChild(emptyDiv);
-  } else {
-    filteredNames.forEach(name => {
-      const item = document.createElement('div');
-      item.className = 'dropdown-item';
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = name;
-      
-      // 最後の使用日を取得
-      const nameUsage = JSON.parse(localStorage.getItem('nameUsageOrder') || '{}');
-      const lastUsed = nameUsage[name];
-      const infoSpan = document.createElement('span');
-      infoSpan.className = 'dropdown-item-info';
-      if (lastUsed) {
-        const lastUsedDate = new Date(lastUsed);
-        const today = new Date();
-        const diffDays = Math.floor((today - lastUsedDate) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 0) {
-          infoSpan.textContent = '今日使用';
-        } else if (diffDays === 1) {
-          infoSpan.textContent = '昨日使用';
-        } else if (diffDays < 7) {
-          infoSpan.textContent = `${diffDays}日前使用`;
+    // インストールボタンのクリックイベント
+    document.getElementById('installPrompt').addEventListener('click', () => {
+      const installButton = document.getElementById('installPrompt');
+      installButton.style.display = 'none';
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the A2HS prompt');
         } else {
-          infoSpan.textContent = `${Math.floor(diffDays / 7)}週間前使用`;
+          console.log('User dismissed the A2HS prompt');
         }
+        deferredPrompt = null;
+      });
+    });
+
+    // オンライン/オフライン状態の監視
+    function updateOnlineStatus() {
+      const offlineIndicator = document.getElementById('offlineIndicator');
+      if (navigator.onLine) {
+        offlineIndicator.classList.remove('show');
       } else {
-        infoSpan.textContent = '';
+        offlineIndicator.classList.add('show');
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // 効果音再生関数
+    function playSuccessSound(type = 'in') {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        if (type === 'in') {
+          // 出勤時：明るい上昇音
+          playChord(audioContext, [523.25, 659.25, 783.99], 0.3, 0.1); // C5-E5-G5
+          setTimeout(() => playChord(audioContext, [783.99, 987.77, 1174.66], 0.3, 0.1), 150); // G5-B5-D6
+        } else {
+          // 退勤時：落ち着いた下降音
+          playChord(audioContext, [783.99, 659.25, 523.25], 0.3, 0.1); // G5-E5-C5
+          setTimeout(() => playChord(audioContext, [523.25, 415.30, 329.63], 0.3, 0.1), 150); // C5-Ab4-E4
+        }
+      } catch (error) {
+        console.log('音声再生に対応していません:', error);
+      }
+    }
+
+    function playChord(audioContext, frequencies, volume = 0.3, duration = 0.2) {
+      frequencies.forEach(freq => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        // 音量の設定（フェードイン・フェードアウト）
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+      });
+    }
+
+    // 日本時間取得（より正確な方法）
+    function getJstDate() {
+      return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+    }
+
+    // 時計更新
+    function updateClock() {
+      const now = getJstDate();
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const date = now.getDate();
+      const weekday = weekdays[now.getDay()];
+      
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      const dateStr = `${year}年${month}月${date}日（${weekday}）`;
+      const timeStr = `${hours}:${minutes}:${seconds}`;
+      
+      document.getElementById('clockDate').textContent = dateStr;
+      document.getElementById('clockTime').textContent = timeStr;
+    }
+
+    // YYYY-MM-DD形式の日付文字列
+    function getLocalDateString(date) {
+      // 日本時間で計算する場合
+      const jstDate = date || getJstDate();
+      const y = jstDate.getFullYear();
+      const m = String(jstDate.getMonth()+1).padStart(2,'0');
+      const d = String(jstDate.getDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // 11日区切りの期間取得
+    function getCurrentPeriod() {
+      const today = getJstDate();
+      const day = today.getDate();
+      const month = today.getMonth();
+      const year = today.getFullYear();
+      
+      let periodStart, periodEnd;
+      
+      if (day >= 11) {
+        // 11日以降なら、当月11日～翌月10日
+        periodStart = new Date(year, month, 11);
+        periodEnd = new Date(year, month + 1, 10);
+      } else {
+        // 10日以前なら、前月11日～当月10日
+        periodStart = new Date(year, month - 1, 11);
+        periodEnd = new Date(year, month, 10);
       }
       
-      item.appendChild(nameSpan);
-      item.appendChild(infoSpan);
-      
-      const handleItemClick = () => {
-        isDropdownActionInProgress = true;
-        input.value = name;
-        hideDropdown(dropdownId);
-        
-        // フィールドによって後処理を分ける
-        if (inputId === 'name') {
-          // 名前フィールドの場合：クリアボタンの表示制御を更新
-          updateClearButton('name', 'clearNameBtn');
-        } else if (inputId === 'searchName') {
-          // 検索フィールドの場合：検索結果を更新
-          displayTimeCards();
-          updateClearButton('searchName', 'clearSearchBtn');
-        }
-        
-        // フラグをリセット
-        setTimeout(() => {
-          isDropdownActionInProgress = false;
-        }, 300);
-      };
+      return { start: periodStart, end: periodEnd };
+    }
 
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleItemClick();
+    // 勤務時間計算（時間差分）
+    function calculateWorkingHours(checkIn, checkOut) {
+      const start = new Date(`1970-01-01T${checkIn}`);
+      const end = new Date(`1970-01-01T${checkOut}`);
+      return (end - start) / (1000 * 60 * 60); // 時間単位
+    }
+
+    // 早朝勤務時間計算（8:30まで）
+    function calculateEarlyMorningHours(checkIn, checkOut) {
+      const start = new Date(`1970-01-01T${checkIn}`);
+      const end = new Date(`1970-01-01T${checkOut}`);
+      const limit = new Date('1970-01-01T08:30');
+      
+      if (end <= limit) {
+        return (end - start) / (1000 * 60 * 60);
+      } else if (start < limit) {
+        return (limit - start) / (1000 * 60 * 60);
+      }
+      return 0;
+    }
+
+    // 夕方勤務時間計算（16:00以降）
+    function calculateEveningHours(checkIn, checkOut) {
+      const start = new Date(`1970-01-01T${checkIn}`);
+      const end = new Date(`1970-01-01T${checkOut}`);
+      const limit = new Date('1970-01-01T16:00');
+      
+      if (start >= limit) {
+        return (end - start) / (1000 * 60 * 60);
+      } else if (end > limit) {
+        return (end - limit) / (1000 * 60 * 60);
+      }
+      return 0;
+    }
+
+    // 既存の名前リストを取得（最新記録順）
+    function getExistingNames() {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const names = Object.keys(data);
+      
+      // 各名前の最新記録日を取得してソート
+      const namesWithLastDate = names.map(name => {
+        const dates = Object.keys(data[name]).sort(); // 日付をソート
+        const lastDate = dates[dates.length - 1]; // 最新の日付
+        return { name, lastDate };
       });
       
-      dropdown.appendChild(item);
-    });
-  }
-  
-  dropdown.classList.add('show');
-}
+      // 最新記録日の降順でソート（新しい順）
+      namesWithLastDate.sort((a, b) => {
+        if (!a.lastDate) return 1;
+        if (!b.lastDate) return -1;
+        return b.lastDate.localeCompare(a.lastDate);
+      });
+      
+      return namesWithLastDate.map(item => item.name);
+    }
 
-// ドロップダウンメニューを非表示
-function hideDropdown(dropdownId) {
-  const dropdown = document.getElementById(dropdownId);
-  dropdown.classList.remove('show');
-}
+    // クリアボタンの表示制御（汎用関数）
+    function updateClearButton(inputId, clearBtnId) {
+      const input = document.getElementById(inputId);
+      const clearBtn = document.getElementById(clearBtnId);
+      
+      if (input && clearBtn) {
+        if (input.value.trim()) {
+          clearBtn.classList.add('show');
+        } else {
+          clearBtn.classList.remove('show');
+        }
+      }
+    }
 
-// 全てのドロップダウンを非表示
-function hideAllDropdowns() {
-  hideDropdown('nameDropdown');
-  hideDropdown('searchDropdown');
-}
+    // ドロップダウン制御用のフラグ
+    let isDropdownActionInProgress = false;
 
-/***********************************************
- * イベントリスナー
- ***********************************************/
-
-// 有給チェック
-document.getElementById('isPaidLeave').addEventListener('change', async function() {
-  if (this.checked) {
-    const pwd = await showPromptDialog(
-      '有給登録',
-      '有給として登録するためのパスワードを入力してください:'
-    );
+    // ドロップダウンメニューを表示
+    function showDropdown(inputId, dropdownId) {
+      if (isDropdownActionInProgress) return;
+      
+      // 他のドロップダウンを先に閉じる
+      if (dropdownId === 'empNameDropdown') {
+        hideDropdown('searchEmpNameDropdown');
+      } else if (dropdownId === 'searchEmpNameDropdown') {
+        hideDropdown('empNameDropdown');
+      }
+      
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const names = getExistingNames();
+      const inputValue = input.value.toLowerCase().trim();
+      
+      // 入力値でフィルタリング
+      const filteredNames = names.filter(name => 
+        name.toLowerCase().includes(inputValue)
+      );
+      
+      dropdown.innerHTML = '';
+      
+      if (filteredNames.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'dropdown-empty';
+        emptyDiv.textContent = inputValue ? '該当する名前が見つかりません' : '記録された名前はありません';
+        dropdown.appendChild(emptyDiv);
+      } else {
+        filteredNames.forEach(name => {
+          const item = document.createElement('div');
+          item.className = 'dropdown-item';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = name;
+          
+          // 最後の記録日を取得
+          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          const lastDate = Object.keys(data[name]).sort().pop();
+          const infoSpan = document.createElement('span');
+          infoSpan.className = 'dropdown-item-info';
+          infoSpan.textContent = lastDate ? `最終: ${lastDate}` : '';
+          
+          item.appendChild(nameSpan);
+          item.appendChild(infoSpan);
+          
+          const handleItemClick = () => {
+            isDropdownActionInProgress = true;
+            input.value = name;
+            hideDropdown(dropdownId);
     
-    if (pwd === "4564") {
-      document.getElementById('normalDateGroup').classList.add('hidden');
-      document.getElementById('paidLeaveYearGroup').classList.remove('hidden');
-      document.getElementById('multiDateGroup').classList.remove('hidden');
-      document.getElementById('dateSingle').required = false;
-      document.getElementById('paidLeaveYear').required = true;
-      document.getElementById('dateMulti').required = true;
-    } else if (pwd) {
-      showToast("パスワードが違います", 'error');
-      this.checked = false;
-    } else {
-      // キャンセルされた場合
-      this.checked = false;
-    }
-  } else {
-    document.getElementById('normalDateGroup').classList.remove('hidden');
-    document.getElementById('paidLeaveYearGroup').classList.add('hidden');
-    document.getElementById('multiDateGroup').classList.add('hidden');
-    document.getElementById('dateSingle').required = true;
-    document.getElementById('paidLeaveYear').required = false;
-    document.getElementById('dateMulti').required = false;
-  }
-});
-
-document.getElementById('timeCardForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  if (editingRecord) {
-    updateTimeCard();
-  } else {
-    saveTimeCard();
-  }
-});
-
-document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
-
-document.getElementById('exportBtn').addEventListener('click', exportToExcel);
-document.getElementById('clearDataBtn').addEventListener('click', requestPasswordAndClearData);
-document.getElementById('backupBtn').addEventListener('click', backupData);
-document.getElementById('backupLatestMonthBtn').addEventListener('click', backupLatestMonthData);
-document.getElementById('restoreBtn').addEventListener('click', function() {
-  document.getElementById('restoreFile').click();
-});
-document.getElementById('restoreFile').addEventListener('change', function(e) {
-  restoreData(e.target.files[0]);
-});
-
-// 検索機能
-document.getElementById('searchName').addEventListener('input', function() {
-  displayTimeCards();
-});
-
-// ページ読み込み
-document.addEventListener('DOMContentLoaded', function() {
-  // テーマの初期化
-  initTheme();
-  
-  // テーマトグルボタンのイベント
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.addEventListener('click', toggleTheme);
-  }
-
-  // 有給の年入力に現在年を設定
-  const currentYear = new Date().getFullYear();
-  const yearInput = document.getElementById('paidLeaveYear');
-  if (yearInput) {
-    yearInput.value = currentYear;
-  }
-
-  // ドロップダウン機能の設定
-  const nameInput = document.getElementById('name');
-  const searchInput = document.getElementById('searchName');
-  const clearNameBtn = document.getElementById('clearNameBtn');
-  const clearSearchBtn = document.getElementById('clearSearchBtn');
-  
-  // 名前フィールドのイベント
-  nameInput.addEventListener('focus', () => {
-    if (!isDropdownActionInProgress) {
-      showDropdown('name', 'nameDropdown');
-      updateClearButton('name', 'clearNameBtn');
-    }
-  });
-  
-  nameInput.addEventListener('input', () => {
-    if (!isDropdownActionInProgress) {
-      showDropdown('name', 'nameDropdown');
-      updateClearButton('name', 'clearNameBtn');
-    }
-  });
-  
-  nameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      hideDropdown('nameDropdown');
-      e.preventDefault();
-    }
-  });
-  
-  // 検索フィールドのイベント
-  searchInput.addEventListener('focus', () => {
-    showDropdown('searchName', 'searchDropdown');
-    updateClearButton('searchName', 'clearSearchBtn');
-  });
-  
-  searchInput.addEventListener('input', () => {
-    if (!isDropdownActionInProgress) {
-      displayTimeCards();
-      showDropdown('searchName', 'searchDropdown');
-      updateClearButton('searchName', 'clearSearchBtn');
-    }
-  });
-  
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      hideDropdown('searchDropdown');
-      e.preventDefault();
-    }
-  });
-  
-  // クリアボタンのイベント
-  clearNameBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    nameInput.value = '';
-    clearNameBtn.classList.remove('show');
-    hideDropdown('nameDropdown');
-    nameInput.focus();
-  });
-  
-  clearSearchBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    searchInput.value = '';
-    clearSearchBtn.classList.remove('show');
-    hideDropdown('searchDropdown');
-    displayTimeCards();
-    searchInput.focus();
-  });
-  
-  // 外部クリックでドロップダウンを閉じる
-  document.addEventListener('click', (e) => {
-    if (isDropdownActionInProgress) return;
-    
-    if (!e.target.closest('.input-wrapper')) {
-      hideAllDropdowns();
-    }
-  });
-  
-  // ESCキーでドロップダウンを閉じる
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      hideAllDropdowns();
-    }
-  });
-  
-  // 初期表示
-  displayTimeCards();
-  updateClearButton('name', 'clearNameBtn');
-  updateClearButton('searchName', 'clearSearchBtn');
-});
-
-/***********************************************
- * saveTimeCard, displayTimeCards, deleteTimeCard
- ***********************************************/
-
-function saveTimeCard() {
-  const name = document.getElementById('name').value.trim();
-  const isPaidLeave = document.getElementById('isPaidLeave').checked;
-
-  if (!name) {
-    showToast('名前を入力してください', 'warning');
-    return;
-  }
-  const checkIn = document.getElementById('checkIn').value;
-  const checkOut = document.getElementById('checkOut').value;
-  if (!checkIn) {
-    showToast('出勤時間を入力してください', 'warning');
-    return;
-  }
-
-  let finalDates = [];
-  if (isPaidLeave) {
-    const paidLeaveYear = document.getElementById('paidLeaveYear').value.trim();
-    let dateMulti = document.getElementById('dateMulti').value.trim();
-    if (!paidLeaveYear) {
-      showToast('有給用の西暦を入力してください', 'warning');
-      return;
-    }
-    if (!dateMulti) {
-      showToast('月日を入力してください', 'warning');
-      return;
-    }
-    // "0212"→"02-12"
-    const splitted = dateMulti.split(',')
-      .map(s => s.trim())
-      .filter(s => s !== '')
-      .map(s => (s.length===4 && s.indexOf('-')===-1) ? s.slice(0,2)+'-'+s.slice(2) : s);
-    if (splitted.length === 0) {
-      showToast('月日を入力してください', 'warning');
-      return;
-    }
-    finalDates = splitted.map(md => `${paidLeaveYear}-${md}`);
-  } else {
-    const dateSingle = document.getElementById('dateSingle').value;
-    if (!dateSingle) {
-      showToast('月日を入力してください', 'warning');
-      return;
-    }
-    finalDates = [dateSingle];
-  }
-
-  const timeCardData = { 
-    checkIn, 
-    checkOut: checkOut || null, // 退勤時間が空の場合はnull
-    isPaidLeave 
-  };
-  let allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  if (!allTimeCards[name]) {
-    allTimeCards[name] = {};
-  }
-  finalDates.forEach(dateStr => {
-    if (!allTimeCards[name][dateStr]) {
-      allTimeCards[name][dateStr] = [];
-    }
-    allTimeCards[name][dateStr].push(timeCardData);
-  });
-  localStorage.setItem('timeCards', JSON.stringify(allTimeCards));
-
-  // 名前の使用順序を記録
-  updateNameUsageOrder(name);
-
-  // 送信後のリセット処理
-  if (!isPaidLeave) {
-    document.getElementById('timeCardForm').reset();
-    document.getElementById('isPaidLeave').checked = false;
-    document.getElementById('normalDateGroup').classList.remove('hidden');
-    document.getElementById('paidLeaveYearGroup').classList.add('hidden');
-    document.getElementById('multiDateGroup').classList.add('hidden');
-    document.getElementById('dateSingle').required = true;
-    document.getElementById('paidLeaveYear').required = false;
-    document.getElementById('dateMulti').required = false;
-    // クリアボタンも非表示にする
-    updateClearButton('name', 'clearNameBtn');
-    if (checkOut) {
-      showToast('送信が完了しました（通常勤務）', 'success');
-    } else {
-      showToast('出勤を記録しました。退勤時は再度登録してください', 'info');
-    }
-  } else {
-    document.getElementById('checkIn').value = "";
-    document.getElementById('checkOut').value = "";
-    document.getElementById('dateMulti').value = "";
-    showToast('送信が完了しました（有給）', 'success');
-  }
-
-  displayTimeCards();
-}
-
-function displayTimeCards() {
-  const searchName = document.getElementById('searchName').value.trim().toLowerCase();
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const resultDiv = document.getElementById('result');
-  resultDiv.innerHTML = '<h2>勤怠一覧</h2>';
-
-  for (let name in allTimeCards) {
-    if (searchName && !name.toLowerCase().includes(searchName)) continue;
-    resultDiv.innerHTML += `<h3>${name}</h3>`;
-    const sortedDates = Object.keys(allTimeCards[name]).sort();
-    sortedDates.forEach(date => {
-      if (Array.isArray(allTimeCards[name][date])) {
-        allTimeCards[name][date].forEach((card, index) => {
-          if (card && card.checkIn) { // 出勤時間があれば表示
-            const paidLabel = card.isPaidLeave ? '<span class="record-status status-paid">有給</span>' : '';
-            const checkOutDisplay = card.checkOut ? card.checkOut : '<span class="record-status status-incomplete">未登録</span>';
+            if (inputId === 'empName') {
+              // 出勤・退勤フィールドの場合：選択した名前でボタン状態を更新
+              updateButtons(name);
+              // クリアボタンの表示制御を更新
+              updateClearButton('empName', 'clearEmpNameBtn');
+            } else if (inputId === 'searchEmpName') {
+              // 検索フィールドの場合：検索結果のみ更新、ボタン状態は変更しない
+              displayEmpRecords();
+              // クリアボタンの表示制御を更新
+              updateClearButton('searchEmpName', 'clearSearchBtn');
+            }
             
-            // 分割ボタンは出勤・退勤両方がある場合のみ表示
-            const splitButton = card.checkOut ? 
-              `<button class="btn-info btn-xs" onclick="splitTimeCard('${name}', '${date}', ${index})">分割</button>` : '';
-            
-            resultDiv.innerHTML += `
-              <div class="record-card">
-                <div class="record-info">
-                  <span class="record-date">${formatDate(date)}</span>
-                  <span class="record-time">${card.checkIn}</span>
-                  <span>→</span>
-                  <span class="record-time">${checkOutDisplay}</span>
-                  ${paidLabel}
-                </div>
-                <div class="record-buttons">
-                  <button class="btn-warning btn-xs" onclick="editTimeCard('${name}', '${date}', ${index})">編集</button>
-                  ${splitButton}
-                  <button class="btn-danger btn-xs" onclick="deleteTimeCard('${name}', '${date}', ${index})">削除</button>
-                </div>
-              </div>
-            `;
-          }
+            // 選択完了後、少し遅延してキーボードを閉じる
+            setTimeout(() => {
+              input.blur();
+              isDropdownActionInProgress = false;
+            }, 200);
+          };
+
+          // シンプルなclickイベントのみ（iPadでも正常動作）
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleItemClick();
+          });
+          
+          dropdown.appendChild(item);
         });
       }
-    });
-  }
-}
-
-function deleteTimeCard(name, date, index) {
-  showConfirmDialog(
-    '記録の削除',
-    '本当に削除しますか？',
-    () => {
-      let allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-      allTimeCards[name][date].splice(index, 1);
-      if (allTimeCards[name][date].length === 0) {
-        delete allTimeCards[name][date];
-      }
-      if (Object.keys(allTimeCards[name]).length === 0) {
-        delete allTimeCards[name];
-      }
-      localStorage.setItem('timeCards', JSON.stringify(allTimeCards));
-      displayTimeCards();
-      showToast('記録を削除しました', 'success');
-    }
-  );
-}
-
-/****************************************************
- * 編集機能
- ****************************************************/
-function editTimeCard(name, date, index) {
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const card = allTimeCards[name][date][index];
-  
-  if (!card) return;
-  
-  // 編集モードに設定
-  editingRecord = { name, date, index };
-  
-  // フォームにデータを読み込み
-  document.getElementById('name').value = name;
-  document.getElementById('dateSingle').value = date;
-  document.getElementById('checkIn').value = card.checkIn || '';
-  document.getElementById('checkOut').value = card.checkOut || '';
-  document.getElementById('isPaidLeave').checked = card.isPaidLeave || false;
-  
-  // 有給チェックの状態に応じてフォームを調整
-  if (card.isPaidLeave) {
-    const yearMatch = date.match(/^(\d{4})-/);
-    if (yearMatch) {
-      const yearInput = document.getElementById('paidLeaveYear');
-      yearInput.value = yearMatch[1];
-      document.getElementById('dateMulti').value = formatDate(date);
-    }
-    document.getElementById('normalDateGroup').classList.add('hidden');
-    document.getElementById('paidLeaveYearGroup').classList.remove('hidden');
-    document.getElementById('multiDateGroup').classList.remove('hidden');
-    document.getElementById('dateSingle').required = false;
-    document.getElementById('paidLeaveYear').required = true;
-    document.getElementById('dateMulti').required = true;
-  }
-  
-  // ボタンの表示を変更
-  document.getElementById('submitBtn').textContent = '更新';
-  document.getElementById('cancelEditBtn').classList.remove('hidden');
-  
-  // クリアボタンの表示を更新
-  updateClearButton('name', 'clearNameBtn');
-  
-  // フォームの先頭にスクロール
-  document.getElementById('timeCardForm').scrollIntoView({ behavior: 'smooth' });
-}
-
-function updateTimeCard() {
-  const name = document.getElementById('name').value.trim();
-  const isPaidLeave = document.getElementById('isPaidLeave').checked;
-
-  if (!name) {
-    showToast('名前を入力してください', 'warning');
-    return;
-  }
-  
-  const checkIn = document.getElementById('checkIn').value;
-  const checkOut = document.getElementById('checkOut').value;
-  
-  if (!checkIn) {
-    showToast('出勤時間を入力してください', 'warning');
-    return;
-  }
-
-  // 更新データを作成
-  const timeCardData = { 
-    checkIn, 
-    checkOut: checkOut || null, // 退勤時間が空の場合はnull
-    isPaidLeave 
-  };
-  
-  let allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  
-  // 元のレコードを削除
-  allTimeCards[editingRecord.name][editingRecord.date].splice(editingRecord.index, 1);
-  if (allTimeCards[editingRecord.name][editingRecord.date].length === 0) {
-    delete allTimeCards[editingRecord.name][editingRecord.date];
-  }
-  if (Object.keys(allTimeCards[editingRecord.name]).length === 0) {
-    delete allTimeCards[editingRecord.name];
-  }
-  
-  // 新しいデータとして追加
-  let finalDates = [];
-  if (isPaidLeave) {
-    const paidLeaveYear = document.getElementById('paidLeaveYear').value.trim();
-    let dateMulti = document.getElementById('dateMulti').value.trim();
-    if (!paidLeaveYear || !dateMulti) {
-      showToast('有給用の西暦と月日を入力してください', 'warning');
-      return;
-    }
-    const splitted = dateMulti.split(',')
-      .map(s => s.trim())
-      .filter(s => s !== '')
-      .map(s => (s.length===4 && s.indexOf('-')===-1) ? s.slice(0,2)+'-'+s.slice(2) : s);
-    finalDates = splitted.map(md => `${paidLeaveYear}-${md}`);
-  } else {
-    const dateSingle = document.getElementById('dateSingle').value;
-    if (!dateSingle) {
-      showToast('月日を入力してください', 'warning');
-      return;
-    }
-    finalDates = [dateSingle];
-  }
-  
-  if (!allTimeCards[name]) {
-    allTimeCards[name] = {};
-  }
-  finalDates.forEach(dateStr => {
-    if (!allTimeCards[name][dateStr]) {
-      allTimeCards[name][dateStr] = [];
-    }
-    allTimeCards[name][dateStr].push(timeCardData);
-  });
-  
-  localStorage.setItem('timeCards', JSON.stringify(allTimeCards));
-  
-  // 名前の使用順序を更新
-  updateNameUsageOrder(name);
-  
-  showToast('更新が完了しました', 'success');
-  cancelEdit();
-  displayTimeCards();
-}
-
-function cancelEdit() {
-  editingRecord = null;
-  
-  // フォームをリセット
-  document.getElementById('timeCardForm').reset();
-  document.getElementById('isPaidLeave').checked = false;
-  
-  // フォームの表示を通常モードに戻す
-  document.getElementById('normalDateGroup').classList.remove('hidden');
-  document.getElementById('paidLeaveYearGroup').classList.add('hidden');
-  document.getElementById('multiDateGroup').classList.add('hidden');
-  document.getElementById('dateSingle').required = true;
-  document.getElementById('paidLeaveYear').required = false;
-  document.getElementById('dateMulti').required = false;
-  
-  // ボタンの表示を戻す
-  document.getElementById('submitBtn').textContent = '送信';
-  document.getElementById('cancelEditBtn').classList.add('hidden');
-  
-  // クリアボタンの表示を更新
-  updateClearButton('name', 'clearNameBtn');
-}
-
-/****************************************************
- * 分割機能（中抜け対応）
- ****************************************************/
-function splitTimeCard(name, date, index) {
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const card = allTimeCards[name][date][index];
-  
-  if (!card || !card.checkIn || !card.checkOut) {
-    showToast('出勤・退勤時間が両方登録されている記録のみ分割できます', 'warning');
-    return;
-  }
-  
-  // 分割時間入力ダイアログを表示
-  showPromptDialog(
-    '中抜け開始時間',
-    `中抜け開始時間を入力してください\n\n【入力例】\n・12:00 または 1200\n・08:20 または 0820\n\n現在の記録:\n出勤: ${card.checkIn}\n退勤: ${card.checkOut}`
-  ).then((breakStartInput) => {
-    if (!breakStartInput) return;
-    
-    const breakStart = normalizeTimeInput(breakStartInput);
-    if (!breakStart) {
-      showToast('無効な時刻形式です。\n\n有効な形式:\n・HH:MM（例：12:00）\n・HHMM（例：1200）\n・HMM（例：820）', 'error');
-      return;
-    }
-    
-    showPromptDialog(
-      '中抜け終了時間',
-      `中抜け終了時間を入力してください\n\n【入力例】\n・13:00 または 1300\n・08:20 または 0820\n\n現在の記録:\n出勤: ${card.checkIn}\n退勤: ${card.checkOut}\n中抜け開始: ${breakStart}`
-    ).then((breakEndInput) => {
-      if (!breakEndInput) return;
       
-      const breakEnd = normalizeTimeInput(breakEndInput);
-      if (!breakEnd) {
-        showToast('無効な時刻形式です。\n\n有効な形式:\n・HH:MM（例：13:00）\n・HHMM（例：1300）\n・HMM（例：830）', 'error');
-        return;
-      }
+      dropdown.classList.add('show');
+    }
+
+    // ドロップダウンメニューを非表示
+    function hideDropdown(dropdownId) {
+      const dropdown = document.getElementById(dropdownId);
+      dropdown.classList.remove('show');
+    }
+
+    // 全てのドロップダウンを非表示
+    function hideAllDropdowns() {
+      hideDropdown('empNameDropdown');
+      hideDropdown('searchEmpNameDropdown');
+    }
+
+    // 確認ダイアログを表示
+    function showConfirmDialog(message, onConfirm) {
+      const dialog = document.createElement('div');
+      dialog.className = 'confirm-dialog';
       
-      // 時間の妥当性をチェック
-      if (!isValidTimeOrder(card.checkIn, breakStart, breakEnd, card.checkOut)) {
-        showToast('時間の順序が正しくありません。\n出勤時間 < 中抜け開始 < 中抜け終了 < 退勤時間\nになるように入力してください。\n\n入力された時刻:\n出勤: ' + card.checkIn + '\n中抜け開始: ' + breakStart + '\n中抜け終了: ' + breakEnd + '\n退勤: ' + card.checkOut, 'error');
-        return;
-      }
+      dialog.innerHTML = `
+        <div class="confirm-dialog-content">
+          <h3>確認</h3>
+          <p>${message}</p>
+          <div class="confirm-buttons">
+            <button class="confirm-btn cancel">キャンセル</button>
+            <button class="confirm-btn delete">削除</button>
+          </div>
+        </div>
+      `;
       
-      showConfirmDialog(
-        '記録を分割',
-        `以下のように分割しますか？\n\n【1つ目の記録】\n出勤: ${card.checkIn}\n退勤: ${breakStart}\n\n【2つ目の記録】\n出勤: ${breakEnd}\n退勤: ${card.checkOut}`,
-        () => {
-          // 元の記録を削除
-          allTimeCards[name][date].splice(index, 1);
-          
-          // 2つの新しい記録を追加
-          const record1 = {
-            checkIn: card.checkIn,
-            checkOut: breakStart,
-            isPaidLeave: card.isPaidLeave || false
-          };
-          
-          const record2 = {
-            checkIn: breakEnd,
-            checkOut: card.checkOut,
-            isPaidLeave: card.isPaidLeave || false
-          };
-          
-          allTimeCards[name][date].push(record1);
-          allTimeCards[name][date].push(record2);
-          
-          localStorage.setItem('timeCards', JSON.stringify(allTimeCards));
-          
-          showToast('記録を分割しました', 'success');
-          displayTimeCards();
-        },
-        '分割する'
-      );
-    });
-  });
-}
-
-// 時間の順序チェック用関数
-function isValidTimeOrder(time1, time2, time3, time4) {
-  const t1 = new Date(`1970-01-01T${time1}`);
-  const t2 = new Date(`1970-01-01T${time2}`);
-  const t3 = new Date(`1970-01-01T${time3}`);
-  const t4 = new Date(`1970-01-01T${time4}`);
-  
-  return t1 < t2 && t2 < t3 && t3 < t4;
-}
-
-// 時刻入力を正規化する関数（4桁数字 → HH:MM形式）
-function normalizeTimeInput(input) {
-  if (!input) return null;
-  
-  // 空白を除去
-  input = input.trim();
-  
-  // 既に HH:MM 形式の場合はそのまま返す
-  if (/^\d{1,2}:\d{2}$/.test(input)) {
-    const [hours, minutes] = input.split(':');
-    const h = parseInt(hours, 10);
-    const m = parseInt(minutes, 10);
-    
-    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
-      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-    }
-    return null;
-  }
-  
-  // 4桁数字の場合（例：0820 → 08:20）
-  if (/^\d{4}$/.test(input)) {
-    const hours = parseInt(input.substring(0, 2), 10);
-    const minutes = parseInt(input.substring(2, 4), 10);
-    
-    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-      return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
-    }
-    return null;
-  }
-  
-  // 3桁数字の場合（例：820 → 08:20）
-  if (/^\d{3}$/.test(input)) {
-    const hours = parseInt(input.substring(0, 1), 10);
-    const minutes = parseInt(input.substring(1, 3), 10);
-    
-    if (hours >= 0 && hours <= 9 && minutes >= 0 && minutes <= 59) {
-      return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
-    }
-    return null;
-  }
-  
-  return null;
-}
-
-/****************************************************
- * 全データ削除 (パスワード)
- ****************************************************/
-function requestPasswordAndClearData() {
-  showPromptDialog(
-    'データクリア',
-    'パスワードを入力してください:'
-  ).then((password) => {
-    if (password === '4564') {
-      showConfirmDialog(
-        'データクリア確認',
-        '本当にすべてのデータをクリアしますか？',
-        () => {
-          localStorage.removeItem('timeCards');
-          displayTimeCards();
-          showToast('すべてのデータを削除しました', 'success');
-        }
-      );
-    } else if (password) {
-      showToast('パスワードが違います', 'error');
-    }
-  });
-}
-
-/****************************************************
- * Excelエクスポート (毎月11日～翌月10日でシート分割)
- ****************************************************/
-function exportToExcel() {
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const workbook = XLSX.utils.book_new();
-
-  for (let name in allTimeCards) {
-    // 期間ごとに分類
-    const periods = {};
-    for (let date in allTimeCards[name]) {
-      const period = getMonthPeriod(date); // {start, end}
-      // キー: start～end のISO
-      const periodKey = period.start.toISOString().slice(0,10) + "_" + period.end.toISOString().slice(0,10);
-
-      if (!periods[periodKey]) {
-        periods[periodKey] = [];
-      }
-      allTimeCards[name][date].forEach(card => {
-        if (card && card.checkIn) { // 出勤時間があれば処理
-          const checkOutTime = card.checkOut || '未登録';
-          let totalHours = 0;
-          let earlyMorning = 0;
-          let evening = 0;
-          
-          // 退勤時間がある場合のみ時間計算
-          if (card.checkOut) {
-            totalHours = parseFloat(calculateTimeDifference(card.checkIn, card.checkOut));
-            earlyMorning = parseFloat(calculateEarlyMorningTime(card.checkIn, card.checkOut));
-            evening = parseFloat(calculateEveningTime(card.checkIn, card.checkOut));
+      document.body.appendChild(dialog);
+      
+      const cancelBtn = dialog.querySelector('.cancel');
+      const deleteBtn = dialog.querySelector('.delete');
+      
+      const closeDialog = () => {
+        dialog.style.opacity = '0';
+        setTimeout(() => {
+          if (document.body.contains(dialog)) {
+            document.body.removeChild(dialog);
           }
+        }, 300);
+      };
+      
+      cancelBtn.addEventListener('click', closeDialog);
+      deleteBtn.addEventListener('click', () => {
+        onConfirm();
+        closeDialog();
+      });
+      
+      // 背景クリックで閉じる
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          closeDialog();
+        }
+      });
+    }
+
+    // 個別データ削除
+    function deleteRecord(name, date, recordIndex) {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      
+      if (data[name] && data[name][date] && data[name][date][recordIndex]) {
+        data[name][date].splice(recordIndex, 1);
+        
+        // 日付に記録がなくなったら日付も削除
+        if (data[name][date].length === 0) {
+          delete data[name][date];
+        }
+        
+        // 名前に記録がなくなったら名前も削除
+        if (Object.keys(data[name]).length === 0) {
+          delete data[name];
+        }
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        displayEmpRecords();
+        updateButtons(document.getElementById('empName').value.trim());
+        showAlert('記録を削除しました', 'success');
+      }
+    }
+
+    // 長押し機能を追加
+    function addLongPressToRecord(element, name, date, recordIndex) {
+      let pressTimer = null;
+      let isLongPress = false;
+      let startCoords = { x: 0, y: 0 };
+      
+      const startPress = (e) => {
+        // 削除ボタンがクリックされた場合は長押し処理をスキップ
+        if (e.target.classList.contains('delete-btn')) {
+          return;
+        }
+        
+        // iPad のテキスト選択を防ぐ
+        e.preventDefault();
+        
+        isLongPress = false;
+        element.classList.add('long-pressing');
+        
+        // タッチ座標を記録
+        if (e.touches) {
+          startCoords.x = e.touches[0].clientX;
+          startCoords.y = e.touches[0].clientY;
+        } else {
+          startCoords.x = e.clientX;
+          startCoords.y = e.clientY;
+        }
+        
+        pressTimer = setTimeout(() => {
+          isLongPress = true;
+          element.classList.remove('long-pressing');
+          showDeleteButton(element, name, date, recordIndex);
           
-          periods[periodKey].push({
-            date,
-            checkIn: card.checkIn,
-            checkOut: checkOutTime,
-            totalHours,
-            earlyMorning,
-            evening,
-            isPaidLeave: card.isPaidLeave
+          // 触覚フィードバック（対応デバイスのみ）
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+        }, 3000); // 3秒
+      };
+      
+      const endPress = (e) => {
+        // 削除ボタンがクリックされた場合は処理をスキップ
+        if (e && e.target && e.target.classList.contains('delete-btn')) {
+          return;
+        }
+        
+        clearTimeout(pressTimer);
+        element.classList.remove('long-pressing');
+      };
+      
+      const moveHandler = (e) => {
+        // 削除ボタンがある場合は移動判定をスキップ
+        if (element.querySelector('.delete-btn')) {
+          return;
+        }
+        
+        // 指が大きく動いた場合は長押しをキャンセル
+        let currentX, currentY;
+        if (e.touches) {
+          currentX = e.touches[0].clientX;
+          currentY = e.touches[0].clientY;
+        } else {
+          currentX = e.clientX;
+          currentY = e.clientY;
+        }
+        
+        const distance = Math.sqrt(
+          Math.pow(currentX - startCoords.x, 2) + 
+          Math.pow(currentY - startCoords.y, 2)
+        );
+        
+        // 20px以上動いたらキャンセル
+        if (distance > 20) {
+          endPress();
+        }
+      };
+      
+      // タッチイベント（iPad対応）
+      element.addEventListener('touchstart', startPress, { passive: false });
+      element.addEventListener('touchend', endPress, { passive: true });
+      element.addEventListener('touchmove', moveHandler, { passive: true });
+      element.addEventListener('touchcancel', endPress, { passive: true });
+      
+      // マウスイベント（デスクトップ用）
+      element.addEventListener('mousedown', startPress);
+      element.addEventListener('mouseup', endPress);
+      element.addEventListener('mouseleave', endPress);
+      element.addEventListener('mousemove', moveHandler);
+      
+      // クリックイベントを無効化（長押し後、ただし削除ボタン以外）
+      element.addEventListener('click', (e) => {
+        if (isLongPress && !e.target.classList.contains('delete-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+      
+      // コンテキストメニューを無効化（右クリック防止）
+      element.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
+    }
+
+    // 削除ボタンを表示
+    function showDeleteButton(recordElement, name, date, recordIndex) {
+      // 既存の削除ボタンがあれば削除
+      const existingBtn = recordElement.querySelector('.delete-btn');
+      if (existingBtn) {
+        existingBtn.remove();
+      }
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '削除';
+      
+      // 削除ボタンのイベント処理を強化
+      const handleDeleteClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        showConfirmDialog(
+          'この勤怠記録を削除しますか？<br>この操作は取り消せません。',
+          () => deleteRecord(name, date, recordIndex)
+        );
+      };
+      
+      // 複数のイベントタイプで確実にキャッチ
+      deleteBtn.addEventListener('click', handleDeleteClick, true);
+      deleteBtn.addEventListener('touchend', handleDeleteClick, true);
+      
+      // 削除ボタン自体の長押しやドラッグを防ぐ
+      deleteBtn.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+      }, true);
+      
+      deleteBtn.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      }, true);
+      
+      recordElement.appendChild(deleteBtn);
+      
+      // 5秒後に自動で削除ボタンを消す
+      setTimeout(() => {
+        if (deleteBtn.parentNode) {
+          deleteBtn.remove();
+        }
+      }, 5000);
+    }
+
+    function showMonthlySummary(name) {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const userData = data[name];
+      if (!userData) return;
+
+      const period = getCurrentPeriod();
+      
+      // 期間内のデータを集計
+      let totalDays = 0;
+      let totalHours = 0;
+      let totalEarlyMorning = 0;
+      let totalEvening = 0;
+      let incompleteCount = 0;
+
+      const today = getLocalDateString(getJstDate());
+
+      Object.keys(userData).forEach(date => {
+        const recordDate = new Date(date);
+        if (recordDate >= period.start && recordDate <= period.end) {
+          userData[date].forEach(rec => {
+            if (rec.checkIn) {
+              totalDays++;
+              if (rec.checkOut) {
+                const hours = calculateWorkingHours(rec.checkIn, rec.checkOut);
+                const earlyMorning = calculateEarlyMorningHours(rec.checkIn, rec.checkOut);
+                const evening = calculateEveningHours(rec.checkIn, rec.checkOut);
+                
+                totalHours += hours;
+                totalEarlyMorning += earlyMorning;
+                totalEvening += evening;
+              } else {
+                // 勤怠記録と同じ判定ロジック：今日以外で未退勤のみ要確認
+                const isToday = date === today;
+                if (!isToday) {
+                  incompleteCount++;
+                }
+              }
+            }
           });
         }
       });
+
+      const totalNormal = totalHours - totalEarlyMorning - totalEvening;
+      const totalOvertime = Math.max(0, totalHours - totalDays * 8); // 8時間超過分
+      
+      const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", 
+                         "7月", "8月", "9月", "10月", "11月", "12月"];
+      
+      const startMonth = period.start.getMonth();
+      const endMonth = period.end.getMonth();
+      let periodLabel;
+      
+      if (startMonth === endMonth) {
+        periodLabel = period.start.getFullYear() + "年 " + monthNames[startMonth];
+      } else {
+        const startYear = period.start.getFullYear();
+        const endYear = period.end.getFullYear();
+        if (startYear === endYear) {
+          periodLabel = startYear + "年 " + monthNames[startMonth] + "11日～" + monthNames[endMonth] + "10日";
+        } else {
+          periodLabel = startYear + "年" + monthNames[startMonth] + "11日～" + endYear + "年" + monthNames[endMonth] + "10日";
+        }
+      }
+
+      const averageHours = totalDays > 0 ? (totalHours / totalDays).toFixed(1) : '0.0';
+
+      const summaryContainer = document.getElementById('summaryContainer');
+      
+      // 既存のサマリーパネルを削除
+      const existingPanel = document.getElementById('summaryPanel');
+      if (existingPanel) {
+        existingPanel.remove();
+      }
+      
+      const summaryPanel = document.createElement('div');
+      summaryPanel.className = 'summary-panel';
+      summaryPanel.id = 'summaryPanel';
+      summaryPanel.style.display = 'block';
+      
+      summaryPanel.innerHTML = 
+        '<div class="summary-header">' +
+          '<div class="summary-title">' + name + 'さんの月次サマリー</div>' +
+          '<div class="summary-period">' + periodLabel + '</div>' +
+        '</div>' +
+        
+        '<div class="summary-stats">' +
+          '<div class="stat-card">' +
+            '<div class="stat-value">' + totalDays + '</div>' +
+            '<div class="stat-label">出勤日数</div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-value">' + totalHours.toFixed(1) + '</div>' +
+            '<div class="stat-label">総勤務時間</div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-value">' + totalOvertime.toFixed(1) + '</div>' +
+            '<div class="stat-label">残業時間</div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-value">' + incompleteCount + '</div>' +
+            '<div class="stat-label">要確認</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="summary-details">' +
+          '<div style="font-weight: 600; margin-bottom: 12px; color: #424245;">詳細</div>' +
+          '<div class="summary-row">' +
+            '<span>平均勤務時間/日</span>' +
+            '<span>' + averageHours + '時間</span>' +
+          '</div>' +
+          '<div class="summary-row">' +
+            '<span>通常勤務時間</span>' +
+            '<span>' + totalNormal.toFixed(1) + '時間</span>' +
+          '</div>' +
+          '<div class="summary-row">' +
+            '<span>早朝勤務時間</span>' +
+            '<span>' + totalEarlyMorning.toFixed(1) + '時間</span>' +
+          '</div>' +
+          '<div class="summary-row">' +
+            '<span>夕方勤務時間</span>' +
+            '<span>' + totalEvening.toFixed(1) + '時間</span>' +
+          '</div>' +
+        '</div>';
+        
+      summaryContainer.appendChild(summaryPanel);
+      
+      // サマリーボタンを「閉じる」ボタンに変更
+      const summaryButton = document.querySelector('.summary-button');
+      if (summaryButton) {
+        summaryButton.textContent = 'サマリーを閉じる';
+        summaryButton.classList.add('close-mode');
+        summaryButton.onclick = () => toggleSummary();
+      }
     }
 
-    // 期間ごとにシートを作成
-    for (let periodKey in periods) {
-      const [startStr, endStr] = periodKey.split("_");
-      const startDate = new Date(startStr);
-      // シート名: "名前 + 月"
-      const monthNames = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-      const sheetName = name + monthNames[startDate.getMonth()];
-
-      const sheetData = [];
-      sheetData.push([`名前: ${name}`]);
-      sheetData.push(["日付","出勤時間","退勤時間","合計時間","朝夕勤務","通常合計","勤務種別"]);
-
-      let overallTotalDay = 0;
-      let overallMorningEvening = 0;
-      let overallNormal = 0;
-
-      // 日付順ソート
-      periods[periodKey].sort((a,b) => new Date(a.date) - new Date(b.date));
-
-      periods[periodKey].forEach(rec => {
-        const morningEvening = rec.earlyMorning + rec.evening;
-        const normalHours = rec.totalHours - morningEvening;
-        
-        // 退勤時間がある場合のみ合計に加算
-        if (rec.checkOut !== '未登録') {
-          overallTotalDay += rec.totalHours;
-          overallMorningEvening += morningEvening;
-          overallNormal += normalHours;
+    // サマリーのトグル機能
+    function toggleSummary() {
+      const panel = document.getElementById('summaryPanel');
+      const button = document.querySelector('.summary-button');
+      
+      if (panel && button) {
+        if (panel.style.display === 'block') {
+          // サマリーを閉じる
+          panel.style.display = 'none';
+          // ボタンテキストを元に戻す
+          const name = button.getAttribute('data-name');
+          if (name) {
+            button.textContent = `${name}さんの月次サマリーを表示`;
+            button.classList.remove('close-mode');
+            button.onclick = () => showMonthlySummary(name);
+          }
         }
+      }
+    }
 
-        sheetData.push([
-          formatDate(rec.date),
-          rec.checkIn,
-          rec.checkOut,
-          rec.checkOut === '未登録' ? '－' : rec.totalHours.toFixed(2),
-          rec.checkOut === '未登録' ? '－' : morningEvening.toFixed(2),
-          rec.checkOut === '未登録' ? '－' : normalHours.toFixed(2),
-          rec.isPaidLeave ? "有給" : ""
-        ]);
+    // サマリーを閉じる（既存の検索ロジックとの互換性のため）
+    function closeSummary() {
+      const panel = document.getElementById('summaryPanel');
+      const button = document.querySelector('.summary-button');
+      
+      if (panel) {
+        panel.style.display = 'none';
+      }
+      
+      if (button) {
+        // ボタンテキストを元に戻す
+        const name = button.getAttribute('data-name');
+        if (name) {
+          button.textContent = `${name}さんの月次サマリーを表示`;
+          button.classList.remove('close-mode');
+          button.onclick = () => showMonthlySummary(name);
+        }
+      }
+    }
+
+    // 出勤／退勤
+    function saveEmpPair(name, type) {
+      const now = getJstDate();
+      const today = getLocalDateString(now);
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (!data[name]) data[name] = {};
+      if (!data[name][today]) data[name][today] = [];
+      const recs = data[name][today];
+      const last = recs.length ? recs[recs.length-1] : null;
+
+      if (type === 'in') {
+        if (last && last.checkOut === null) {
+          showAlert('連続した出勤はできません', 'error');
+          return;
+        }
+        recs.push({ checkIn: now.toTimeString().slice(0,5), checkOut: null });
+      } else {
+        if (!last || last.checkOut !== null) {
+          showAlert('先に出勤してください', 'error');
+          return;
+        }
+        last.checkOut = now.toTimeString().slice(0,5);
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      playSuccessSound(type);
+      showAlert('記録しました', 'success');
+      document.getElementById('empName').value = '';
+      updateButtons('');
+      // 名前フィールドのクリアボタンも非表示にする
+      updateClearButton('empName', 'clearEmpNameBtn');
+      displayEmpRecords();
+    }
+
+    // アラート表示
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert ${type}`;
+      alertDiv.textContent = message;
+      
+      document.body.appendChild(alertDiv);
+      
+      setTimeout(() => {
+        alertDiv.style.animation = 'slideOutAlertTop 0.3s ease-in forwards';
+        setTimeout(() => {
+          if (document.body.contains(alertDiv)) {
+            document.body.removeChild(alertDiv);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    // ボタン制御
+    function updateButtons(name) {
+      const btnIn = document.getElementById('btnClockIn');
+      const btnOut = document.getElementById('btnClockOut');
+      if (!name) {
+        btnIn.disabled = true;
+        btnOut.disabled = true;
+        return;
+      }
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')[name] || {};
+      const dates = Object.keys(data).sort().reverse();
+      const lastDate = dates[0];
+      const lastRec = lastDate ? data[lastDate][data[lastDate].length-1] : null;
+      const today = getLocalDateString(getJstDate());
+      
+      if (!lastRec || lastRec.checkOut !== null || lastDate !== today) {
+        btnIn.disabled = false;
+        btnOut.disabled = true;
+      } else {
+        btnIn.disabled = true;
+        btnOut.disabled = false;
+      }
+    }
+
+    // 一覧表示＋検索
+    function displayEmpRecords() {
+      const filter = document.getElementById('searchEmpName').value.trim().toLowerCase();
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const container = document.getElementById('empResult');
+      container.innerHTML = '';
+      
+      const today = getLocalDateString(getJstDate());
+      
+      let hasRecords = false;
+      let searchedNames = [];
+      
+      Object.keys(data)
+        .filter(name => name.toLowerCase().includes(filter))
+        .forEach(name => {
+          // 検索にヒットした名前を記録
+          if (!searchedNames.includes(name)) {
+            searchedNames.push(name);
+          }
+          
+         Object.keys(data[name]).sort().reverse().forEach(date => {
+    // 同じ日の記録を新しい順（逆順）で表示
+    const records = data[name][date];
+    records.slice().reverse().forEach((rec, reverseIndex) => {
+      if (rec.checkIn) {
+        // 実際の配列での正しいインデックスを計算（削除機能用）
+        const recordIndex = records.length - 1 - reverseIndex;
+        
+        hasRecords = true;
+        const div = document.createElement('div');
+        div.className = 'record';
+        
+        const info = document.createElement('div');
+        info.className = 'record-info';
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'record-name';
+        nameDiv.textContent = name;
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'record-time';
+        timeDiv.textContent = `${date} ${rec.checkIn}${rec.checkOut ? ` - ${rec.checkOut}` : ''}`;
+        
+        info.appendChild(nameDiv);
+        info.appendChild(timeDiv);
+        
+        const badge = document.createElement('div');
+        
+        // 日付チェックを追加
+        const isToday = date === today;
+        let statusClass, statusText;
+        
+        if (rec.checkOut) {
+          statusClass = 'status-completed';
+          statusText = '完了';
+        } else if (isToday) {
+          statusClass = 'status-working';
+          statusText = '勤務中';
+        } else {
+          statusClass = 'status-overtime';
+          statusText = '要確認';
+        }
+        
+        badge.className = `status-badge ${statusClass}`;
+        badge.textContent = statusText;
+        
+        div.appendChild(info);
+        div.appendChild(badge);
+        
+        // 長押し機能を追加（正しいrecordIndexを使用）
+        addLongPressToRecord(div, name, date, recordIndex);
+        
+        container.appendChild(div);
+      }
+    });
+  });
+        });
+      
+      // 既存のサマリーをチェック
+      const existingButton = document.querySelector('.summary-button');
+      const existingPanel = document.getElementById('summaryPanel');
+      
+      // 現在のサマリーが表示されている名前を取得
+      let currentSummaryName = null;
+      if (existingPanel && existingPanel.style.display === 'block') {
+        const titleElement = existingPanel.querySelector('.summary-title');
+        if (titleElement) {
+          const titleText = titleElement.textContent;
+          const match = titleText.match(/^(.+)さんの月次サマリー$/);
+          if (match) {
+            currentSummaryName = match[1];
+          }
+        }
+      }
+      
+      // サマリーを閉じる条件：
+      // 1. 検索結果が1人でない
+      // 2. 現在のサマリーの名前が検索結果に含まれていない
+      if (currentSummaryName && 
+          (searchedNames.length !== 1 || !searchedNames.includes(currentSummaryName))) {
+        closeSummary();
+      }
+      
+      // 検索結果が1人の場合、月次サマリーボタンを表示
+      if (searchedNames.length === 1 && hasRecords) {
+        if (!existingButton) {
+          const summaryButton = document.createElement('button');
+          summaryButton.className = 'summary-button';
+          summaryButton.textContent = `${searchedNames[0]}さんの月次サマリーを表示`;
+          summaryButton.onclick = () => showMonthlySummary(searchedNames[0]);
+          // データ属性で名前を保存（後でトグル機能で使用）
+          summaryButton.setAttribute('data-name', searchedNames[0]);
+          document.getElementById('summaryContainer').appendChild(summaryButton);
+        } else {
+          // ボタンが既にある場合は内容を更新
+          existingButton.textContent = `${searchedNames[0]}さんの月次サマリーを表示`;
+          existingButton.onclick = () => showMonthlySummary(searchedNames[0]);
+          existingButton.setAttribute('data-name', searchedNames[0]);
+        }
+      } else {
+        // 1人以外の場合はボタンを削除
+        if (existingButton) {
+          existingButton.remove();
+        }
+      }
+      
+      if (!hasRecords) {
+        const noData = document.createElement('div');
+        noData.className = 'no-data';
+        noData.textContent = 'まだ記録がありません';
+        container.appendChild(noData);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateOnlineStatus(); // オンライン状態チェックを追加
+      
+      const nameInput = document.getElementById('empName');
+      const searchInput = document.getElementById('searchEmpName');
+      const btnClockIn = document.getElementById('btnClockIn');
+      const btnClockOut = document.getElementById('btnClockOut');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+      const clearEmpNameBtn = document.getElementById('clearEmpNameBtn');
+      
+      // ドロップダウン機能の設定
+      nameInput.addEventListener('focus', () => {
+        if (!isDropdownActionInProgress) {
+          showDropdown('empName', 'empNameDropdown');
+          // フォーカス時にもクリアボタンの表示状態をチェック
+          updateClearButton('empName', 'clearEmpNameBtn');
+        }
+      });
+      
+      nameInput.addEventListener('input', () => {
+        if (!isDropdownActionInProgress) {
+          updateButtons(nameInput.value.trim());
+          showDropdown('empName', 'empNameDropdown');
+          // クリアボタンの表示制御
+          updateClearButton('empName', 'clearEmpNameBtn');
+        }
+      });
+      
+      // エンターキーでプルダウンとキーボードを閉じる
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          hideDropdown('empNameDropdown');
+          nameInput.blur(); // iPad対応：キーボードも閉じる
+          e.preventDefault(); // フォームの送信を防ぐ
+        }
+      });
+      
+      searchInput.addEventListener('focus', () => {
+        showDropdown('searchEmpName', 'searchEmpNameDropdown');
+        // フォーカス時にもクリアボタンの表示状態をチェック
+        updateClearButton('searchEmpName', 'clearSearchBtn');
+      });
+      
+      searchInput.addEventListener('input', () => {
+        if (!isDropdownActionInProgress) {
+          displayEmpRecords();
+          showDropdown('searchEmpName', 'searchEmpNameDropdown');
+          // クリアボタンの表示制御
+          updateClearButton('searchEmpName', 'clearSearchBtn');
+        }
+      });
+      
+      // 検索フィールドでもエンターキーでプルダウンとキーボードを閉じる
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          hideDropdown('searchEmpNameDropdown');
+          searchInput.blur(); // iPad対応：キーボードも閉じる
+          e.preventDefault(); // フォームの送信を防ぐ
+        }
+      });
+      
+      // 名前フィールドのクリアボタンのクリックイベント
+      clearEmpNameBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        nameInput.value = '';
+        clearEmpNameBtn.classList.remove('show');
+        hideDropdown('empNameDropdown');
+        updateButtons(''); // ボタン状態をリセット
+        
+        // 名前フィールドにフォーカスを戻す
+        nameInput.focus();
+      });
+      
+      // 検索フィールドのクリアボタンのクリックイベント
+      clearSearchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        searchInput.value = '';
+        clearSearchBtn.classList.remove('show');
+        hideDropdown('searchEmpNameDropdown');
+        displayEmpRecords(); // 検索結果をリセット
+        
+        // 検索フィールドにフォーカスを戻す
+        searchInput.focus();
+      });
+      
+      // 外部クリック・タッチでドロップダウンを閉じる
+      const hideDropdownsOnOutsideTouch = (e) => {
+        if (isDropdownActionInProgress) return;
+        
+        // プルダウン関連要素のチェックを強化
+        const isDropdownRelated = e.target.closest('.input-wrapper') || 
+                                 e.target.closest('.dropdown-menu') || 
+                                 e.target.classList.contains('dropdown-item') ||
+                                 e.target.classList.contains('dropdown-empty');
+        
+        if (!isDropdownRelated) {
+          isDropdownActionInProgress = true;
+          hideAllDropdowns();
+          
+          // プルダウン操作以外の場合のみキーボードを閉じる
+          const activeElement = document.activeElement;
+          if (activeElement && (activeElement.id === 'empName' || activeElement.id === 'searchEmpName')) {
+            activeElement.blur();
+          }
+          
+          setTimeout(() => {
+            isDropdownActionInProgress = false;
+          }, 300);
+        }
+      };
+      
+      // タッチデバイス用：touchend を使用してスクロールとの干渉を避ける
+      document.addEventListener('touchend', (e) => {
+        // ドロップダウンが表示されている場合のみ処理
+        const empDropdown = document.getElementById('empNameDropdown');
+        const searchDropdown = document.getElementById('searchEmpNameDropdown');
+        const isAnyDropdownVisible = empDropdown.classList.contains('show') || searchDropdown.classList.contains('show');
+        
+        if (isAnyDropdownVisible) {
+          hideDropdownsOnOutsideTouch(e);
+        }
+      }, { passive: true });
+      
+      // デスクトップ用
+      if (!('ontouchstart' in window)) {
+        document.addEventListener('click', hideDropdownsOnOutsideTouch);
+      }
+      
+      // ESCキーでドロップダウンとキーボードを閉じる
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          hideAllDropdowns();
+          // iPad対応：キーボードも閉じる
+          const activeElement = document.activeElement;
+          if (activeElement && (activeElement.id === 'empName' || activeElement.id === 'searchEmpName')) {
+            activeElement.blur();
+          }
+        }
+      });
+      
+      document.getElementById('toggleMenu').addEventListener('click', (e) => {
+        const menu = document.getElementById('adminMenu');
+        const toggle = document.getElementById('toggleMenu');
+        const isOpen = menu.style.display === 'flex';
+        
+        if (isOpen) {
+          menu.style.display = 'none';
+          menu.classList.remove('show');
+          toggle.classList.remove('active');
+        } else {
+          menu.style.display = 'flex';
+          menu.classList.add('show');
+          toggle.classList.add('active');
+        }
       });
 
-      sheetData.push([]);
-      sheetData.push([
-        "合計","","",
-        overallTotalDay.toFixed(2),
-        overallMorningEvening.toFixed(2),
-        overallNormal.toFixed(2),
-        ""
-      ]);
+      btnClockIn.addEventListener('click', () => {
+        saveEmpPair(nameInput.value.trim(), 'in');
+      });
 
-      const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    }
-  }
-
-  XLSX.writeFile(workbook, "timecards.xlsx");
-  showToast('Excelファイルを出力しました', 'success');
-}
-
-/****************************************************
- * バックアップ (最新の月) → 例えば3/11～4/10だけ
- ****************************************************/
-function backupLatestMonthData() {
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const { start, end } = getLatestMonthPeriod(); // 今日基準で 11日～翌10日
-  const latestMonthData = {};
-
-  for (let name in allTimeCards) {
-    for (let date in allTimeCards[name]) {
-      const d = new Date(date);
-      if (d >= start && d <= end) {
-        if (!latestMonthData[name]) {
-          latestMonthData[name] = {};
+      btnClockOut.addEventListener('click', () => {
+        saveEmpPair(nameInput.value.trim(), 'out');
+      });
+      
+      // 改善されたバックアップ機能（キャンセル時の修正版）
+      document.getElementById('backupBtn').addEventListener('click', async () => {
+        const data = localStorage.getItem(STORAGE_KEY) || '{}';
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0,10).replace(/-/g, '');
+        const timeStr = now.toTimeString().slice(0,5).replace(/:/g, '');
+        const filename = `勤怠データ_${dateStr}_${timeStr}.json`;
+        
+        // Web Share API対応チェック（iPad/iPhone）
+        if (navigator.share && navigator.canShare) {
+          try {
+            const blob = new Blob([data], { type: 'application/json' });
+            const file = new File([blob], filename, { type: 'application/json' });
+            
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: '勤怠管理バックアップ',
+                text: '勤怠データのバックアップファイルです',
+                files: [file]
+              });
+              showAlert('バックアップを共有しました', 'success');
+              return;
+            }
+          } catch (error) {
+            console.log('Share API error:', error);
+            
+            // ユーザーがキャンセルした場合はフォールバックを実行しない
+            if (error.name === 'AbortError' || error.message.includes('cancel') || error.message.includes('abort')) {
+              console.log('ユーザーがキャンセルしました');
+              return; // ここで処理を終了、フォールバックは実行しない
+            }
+            
+            // その他のエラーの場合のみフォールバックに進む
+            console.log('Share API failed, falling back to download');
+          }
         }
-        latestMonthData[name][date] = allTimeCards[name][date];
-      }
-    }
-  }
+        
+        // フォールバック：従来のダウンロード方式
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); 
+        a.href = url; 
+        a.download = filename; 
+        a.click(); 
+        URL.revokeObjectURL(url);
+        
+        showAlert('バックアップファイルをダウンロードしました', 'success');
+      });
 
-  if (Object.keys(latestMonthData).length === 0) {
-    showToast('最新の月のデータがありません', 'warning');
-    return;
-  }
+      document.getElementById('restoreBtn').addEventListener('click', () => {
+        document.getElementById('restoreFile').click();
+      });
 
-  const dataStr = JSON.stringify(latestMonthData);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'latest_month_timecards_backup.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('最新の月をバックアップしました', 'success');
-}
+      document.getElementById('restoreFile').addEventListener('change', e => {
+        const reader = new FileReader(); 
+        reader.onload = ev => {
+          try {
+            JSON.parse(ev.target.result);
+            localStorage.setItem(STORAGE_KEY, ev.target.result);
+            displayEmpRecords(); 
+            updateButtons(nameInput.value.trim());
+            showAlert('データを復元しました', 'success');
+          } catch {
+            showAlert('無効なデータ形式です', 'error');
+          }
+        }; 
+        reader.readAsText(e.target.files[0]);
+      });
 
-/****************************************************
- * 通常バックアップ・リストア
- ****************************************************/
-function backupData() {
-  const allTimeCards = JSON.parse(localStorage.getItem('timeCards')) || {};
-  const dataStr = JSON.stringify(allTimeCards);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'timecards_backup.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('データをバックアップしました', 'success');
-}
-
-function restoreData(file) {
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    try {
-      const allTimeCards = JSON.parse(event.target.result);
-      if (allTimeCards && typeof allTimeCards === 'object') {
-        localStorage.setItem('timeCards', JSON.stringify(allTimeCards));
-        displayTimeCards();
-        showToast('データを復元しました', 'success');
-      } else {
-        showToast('無効なデータ形式です', 'error');
-      }
-    } catch (e) {
-      showToast('データの読み込み中にエラーが発生しました', 'error');
-    }
-  };
-  reader.readAsText(file);
-}
+      document.getElementById('clearAllBtn').addEventListener('click', () => {
+        const pwd = prompt('パスワードを入力してください:');
+        if (pwd === '4564') {
+          localStorage.removeItem(STORAGE_KEY);
+          displayEmpRecords(); 
+          updateButtons('');
+          showAlert('全データを削除しました', 'success');
+        } else if (pwd !== null) {
+          showAlert('パスワードが違います', 'error');
+        }
+      });
+      
+      // 時計の初期化と更新
+      updateClock();
+      setInterval(updateClock, 1000); // 1秒ごとに更新
+      
+      displayEmpRecords(); 
+      updateButtons('');
+      
+      // 初期状態のクリアボタン表示制御
+      updateClearButton('empName', 'clearEmpNameBtn');
+      updateClearButton('searchEmpName', 'clearSearchBtn');
+    });
   </script>
 </body>
 </html>
